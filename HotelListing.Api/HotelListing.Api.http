@@ -1,5 +1,39 @@
 @HotelListing.Api_HostAddress = https://localhost:7229
 
+GET {{HotelListing.Api_HostAddress}}/api/countries
+
+###
+
+POST {{HotelListing.Api_HostAddress}}/api/countries
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5YzBmZWNmNy0zNmQzLTQwYjUtODRmNy0zYjY4NGU4NjU4OGQiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6IjQ2ODZlNTk2LWIxNzQtNDllZC1hYmRiLTU3YmQwNjc3ZmQxYyIsIm5hbWUiOiJKb2huIERvZSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzgxNjkzNTA5LCJpc3MiOiJIb3RlbExpc3RpbmdBcGkiLCJhdWQiOiJIb3RlbExpc3RpbmdBcGlDbGllbnQifQ.zFiyc0h_K_JldhXJ6LMK1ydGrfO9ddpizUa935PID50
+Content-Type: application/json
+
+{
+  "Name":"United Kingdom",
+  "ShortName":"UK"
+}
+
+###
+
+DELETE {{HotelListing.Api_HostAddress}}/api/countries/{{id}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlNzk0ZjliNS0yMTc2LTQwZmEtYjU4NC1hY2MwODQ1YjMzZjkiLCJlbWFpbCI6InVzZXIxQGdtYWlsLmNvbSIsImp0aSI6ImUyMjM4ZmU1LTZkMmUtNDFkNy1hNjlmLTdiODFjZGE2MTJmMyIsIm5hbWUiOiJKb2huIERvZSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlVzZXIiLCJleHAiOjE3ODE2OTMwMzQsImlzcyI6IkhvdGVsTGlzdGluZ0FwaSIsImF1ZCI6IkhvdGVsTGlzdGluZ0FwaUNsaWVudCJ9.ZiE5ELSNbyakE9FEw0aF4EqiHrun8qjGTR7t7RO_mcQ
+###
+
+@id=6
+GET {{HotelListing.Api_HostAddress}}/api/countries/{{id}}
+
+###
+
+PUT {{HotelListing.Api_HostAddress}}/api/countries/{{id}}
+Content-Type: application/json
+
+{
+  "Id":4,
+  "Name":"Singapore",
+  "ShortName":"SG"
+}
+
+###
 
 GET {{HotelListing.Api_HostAddress}}/api/hotels
 
@@ -9,12 +43,14 @@ POST {{HotelListing.Api_HostAddress}}/api/hotels
 Content-Type: application/json
 
 {
-  //Hotel
+  "Name":"Radison",
+  "Address":"Moscow",
+  "Rating":4.3,
+  "CountryId":5
 }
 
 ###
 
-@id=0
 DELETE {{HotelListing.Api_HostAddress}}/api/hotels/{{id}}
 
 ###
@@ -27,7 +63,53 @@ PUT {{HotelListing.Api_HostAddress}}/api/hotels/{{id}}
 Content-Type: application/json
 
 {
-  //Hotel
+  "Id":4,
+  "Name":"Four Seasons",
+  "Address":"Moscow",
+  "Rating":4.3,
+  "CountryId":5
 }
 
+###
+
+POST {{HotelListing.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+    "email":"example123@gmail.com",
+    "password":"P@ssword1",
+    "FirstName":"John",
+    "LastName":"Doe"
+}
+
+###
+POST {{HotelListing.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email":"admin@gmail.com",
+  "password":"P@ssword1"
+}
+
+###
+
+POST {{HotelListing.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email":"admin@gmail.com",
+  "password":"P@ssword1",
+  "FirstName":"John",
+  "LastName":"Doe",
+  "Role":"Admin"
+}
+
+###
+
+GET {{HotelListing.Api_HostAddress}}/api/apikey
+X-Api-Key: j5wTj1U7t4cXz3q2KJjJ0nJYj9M0L4M0r4vR9JzN0J4=
+###
+
+GET {{HotelListing.Api_HostAddress}}/api/basicauth
+Authorization: Basic YWRtaW5AZ21haWwuY29tOlBAc3N3b3JkMQ== 
 ###
