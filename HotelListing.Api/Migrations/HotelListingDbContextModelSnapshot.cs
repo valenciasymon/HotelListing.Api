@@ -250,7 +250,7 @@ namespace HotelListing.Api.Migrations
 
                     b.HasIndex("HotelId");
 
-                    b.ToTable("Admins");
+                    b.ToTable("HotelAdmins");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

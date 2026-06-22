@@ -27,7 +27,7 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
         CreateBookingDto createBookingDto)
     {
         Result<GetBookingDto> booking = await bookingService
-            .CreateBookingAsync(createBookingDto);
+            .CreateBookingAsync(hotelId,createBookingDto);
 
         return ToActionResult(booking);
     }
@@ -48,6 +48,26 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
     public async Task<ActionResult> CancelBooking(int hotelId,int bookingId)
     {
         Result booking = await bookingService.CancelBookingAsync(hotelId, bookingId);
+
+        return ToActionResult(booking);
+    }
+
+
+    [Authorize(Roles ="Admin")]
+    [HttpPut("{bookingId:int}/admin/cancel")]
+    public async Task<ActionResult> AdminCancelBooking(int hotelId,int bookingId)
+    {
+        Result booking = await bookingService.AdminCancelBookingAsync(hotelId,bookingId);
+
+        return ToActionResult(booking);
+    }
+
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{bookingId:int}/admin/confirm")]
+    public async Task<ActionResult> AdminConfirmBooking(int hotelId,int bookingId)
+    {
+        Result booking = await bookingService.AdminConfirmBookingAsync(hotelId, bookingId);
 
         return ToActionResult(booking);
     }

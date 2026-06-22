@@ -95,7 +95,6 @@ public class UserService(
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Name,$"{user.FirstName} {user.LastName}")
-
         };
 
         //set user role claims

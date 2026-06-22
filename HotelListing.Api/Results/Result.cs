@@ -35,6 +35,11 @@ public readonly record struct Result
         return new Result(false, errors);
     }
 
+    public static Result Forbidden(params Error[] errors)
+    {
+        return new Result(false, errors);
+    }
+
     public static Result Combine(params Result[] results)
     {
         return results.Any(r => !r.IsSuccess) ?
@@ -68,5 +73,7 @@ public readonly record struct Result<T>
         => new(false, default, errors);
 
     public static Result<T> Conflict(params Error[] errors)
+        => new(false, default, errors);
+    public static Result<T> Forbidden(params Error[] errors)
         => new(false, default, errors);
 }

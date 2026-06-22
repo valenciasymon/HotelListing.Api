@@ -35,6 +35,7 @@ public abstract class BaseApiController :ControllerBase
             ErrorCodes.Conflict => Conflict(e.Description),
             ErrorCodes.Validation => BadRequest(e.Description),
             ErrorCodes.BadRequest => BadRequest(e.Description),
+            ErrorCodes.Forbidden => Forbid(e.Description),
             _ => Problem(detail: e.Description,title: e.Code)
         }; 
     }

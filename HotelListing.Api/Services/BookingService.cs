@@ -7,6 +7,7 @@ using HotelListing.Api.Results;
 using Microsoft.EntityFrameworkCore;
 using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace HotelListing.Api.Services;
 
@@ -203,7 +204,7 @@ public class BookingService(
         return Result<GetBookingDto>.Success(getBookingDto);
     }
 
-    public async Task<Result> CanelBookingAsync(int hotelId,int bookingId)
+    public async Task<Result> CancelBookingAsync(int hotelId,int bookingId)
     {
         string? userId = httpContextAccessor?.HttpContext?.User?.FindFirst(
             JwtRegisteredClaimNames.Sub)?.Value;
@@ -222,7 +223,83 @@ public class BookingService(
         if (booking.Status == BookingStatus.Cancelled) return Result.Conflict(
             new Error(ErrorCodes.Conflict, "Booking is Already Cancelled"));
 
+        if (booking.Status == BookingStatus.Confirmed) return Result.Conflict(
+            new Error(ErrorCodes.Conflict, "Cannot Cancel a Confirmed Booking"));
+
         booking.Status = BookingStatus.Cancelled;
+        booking.UpdateAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return Result.Success();
+    }
+
+    public async Task<Result> AdminCancelBookingAsync(int hotelId,int bookingId)
+    {
+        string? userId = httpContextAccessor.HttpContext?.User?
+            .FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
+            ErrorCodes.Validation, "User is Required"));
+
+        bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
+            a => a.ApplicationUserId == userId
+            && a.HotelId == hotelId);
+
+        if (!isHotelAdmin) return Result.Forbidden(new Error(
+            ErrorCodes.Forbidden, "Must be a HotelAdmin"));
+
+        Booking? booking = await context.Bookings.FirstOrDefaultAsync(
+            b => b.BookingId == bookingId
+            && b.HotelId == hotelId);
+
+        if (booking == null) return Result.NotFound(new Error(
+            ErrorCodes.NotFound, "Booking Not Found"));
+
+        if (booking.Status == BookingStatus.Cancelled) return Result.Conflict(
+            new Error(ErrorCodes.Conflict, "Booking is Already Cancelled"));
+
+        if (booking.Status == BookingStatus.Confirmed) return Result.Conflict(
+            new Error(ErrorCodes.Conflict, "Cannot Cancel a Confirmed Booking"));
+
+        booking.Status = BookingStatus.Cancelled;
+        booking.UpdateAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return Result.Success();
+
+    }
+
+    public async Task<Result> AdminConfirmBookingAsync(int hotelId,int bookingId)
+    {
+        string? userId = httpContextAccessor.HttpContext?.User?
+            .FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
+            ErrorCodes.Validation, "User is Required"));
+
+        bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
+            a => a.ApplicationUserId == userId 
+            && a.HotelId == hotelId);
+
+        if (!isHotelAdmin) return Result.Forbidden(new Error(
+            ErrorCodes.Forbidden, "Must be A HotelAdmin"));
+
+        Booking? booking = await context.Bookings.FirstOrDefaultAsync(
+            b => b.BookingId == bookingId
+            && b.HotelId == hotelId);
+
+        if (booking == null) return Result.NotFound(new Error(
+            ErrorCodes.NotFound, "Booking Not Found"));
+
+        if (booking.Status == BookingStatus.Confirmed) return Result.Conflict(
+            new Error(ErrorCodes.Conflict, "Booking is Already Confirmed"));
+
+        if (booking.Status == BookingStatus.Cancelled) return Result.Conflict(
+            new Error(ErrorCodes.Conflict, "Cannot Confirm a Cancelled Booking"));
+
+        booking.Status = BookingStatus.Confirmed;
         booking.UpdateAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
