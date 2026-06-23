@@ -7,6 +7,7 @@ using HotelListing.Api.Results;
 using Microsoft.EntityFrameworkCore;
 using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 
 namespace HotelListing.Api.Services;
@@ -15,8 +16,32 @@ public class BookingService(
     HotelListingDbContext context,
     IHttpContextAccessor httpContextAccessor) : IBookingService
 {
-    public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingAsync(int hotelId)
+    private string? UserId => httpContextAccessor.HttpContext?
+        .User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+    private bool IsAdmin => httpContextAccessor.HttpContext?.User?.
+        IsInRole("Admin") ?? false;
+
+    public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingAdminAsync(int hotelId)
     {
+        string? userId = UserId;
+        bool isAdmin = IsAdmin;
+
+        if (string.IsNullOrEmpty(userId)) return Result<IEnumerable<GetBookingDto>>
+                .BadRequest(new Error(ErrorCodes.Validation, "User is Required"));
+
+        if (!isAdmin)
+        {
+            bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
+                h => h.ApplicationUserId == userId
+                && h.HotelId == hotelId);
+
+            if (!isHotelAdmin) return Result<IEnumerable<GetBookingDto>>
+                    .Forbidden(new Error(
+                        ErrorCodes.Forbidden,
+                        "Must Be Admin or HotelAdmin"));
+        }
+
         bool hotelExist = await context.Hotels.AnyAsync(h => h.Id == hotelId);
 
         if (!hotelExist)
@@ -43,6 +68,37 @@ public class BookingService(
         return Result<IEnumerable<GetBookingDto>>.Success(bookings);
     }
 
+    public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingUserAsync(int hotelId)
+    {
+        string? userId = UserId;
+
+        if (string.IsNullOrEmpty(userId)) return Result<IEnumerable<GetBookingDto>>.BadRequest(new Error(
+            ErrorCodes.Validation,"User is Required"));
+        
+        bool hotelExist = await context.Hotels.AnyAsync(h => h.Id == hotelId);
+
+        if (!hotelExist) return Result<IEnumerable<GetBookingDto>>.NotFound(new Error(
+            ErrorCodes.NotFound,"Hotel Not Found"));
+
+        List<GetBookingDto> bookings = await context.Bookings
+            .Where(b => b.HotelId == hotelId && b.ApplicationUserId == userId)
+            .OrderBy(b=> b.CheckIn)
+            .Select(b => new GetBookingDto(
+                b.BookingId,
+                b.HotelId,
+                b.Hotel!.Name,
+                b.CheckIn,
+                b.CheckOut,
+                b.Guests,
+                b.TotalPrice,
+                b.Status.ToString(),
+                b.CreatedAtUtc,
+                b.UpdateAtUtc))
+            .ToListAsync();
+
+        return Result<IEnumerable<GetBookingDto>>.Success(bookings);
+    }
+
     public async Task<Result<GetBookingDto>> CreateBookingAsync(
         int hotelId,
         CreateBookingDto createBookingDto)
@@ -53,10 +109,7 @@ public class BookingService(
                 ErrorCodes.Validation, "Mismatch Hotel Id"));
         }
 
-        string? userId = httpContextAccessor?
-            .HttpContext?
-            .User?
-            .FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        string? userId = UserId;
             
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -136,10 +189,7 @@ public class BookingService(
     public async Task<Result<GetBookingDto>> UpdateBookingAsync(
         int hotelId,int bookingId,UpdateBookingDto updateBookingDto)
     {
-        string? userId = httpContextAccessor?
-            .HttpContext?
-            .User?
-            .FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        string? userId = UserId;
 
         if (string.IsNullOrEmpty(userId)) return Result<GetBookingDto>.BadRequest(
             new Error(ErrorCodes.Validation, "User Is Required"));
@@ -206,8 +256,7 @@ public class BookingService(
 
     public async Task<Result> CancelBookingAsync(int hotelId,int bookingId)
     {
-        string? userId = httpContextAccessor?.HttpContext?.User?.FindFirst(
-            JwtRegisteredClaimNames.Sub)?.Value;
+        string? userId = UserId;
 
         if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
             ErrorCodes.Validation, "User is Required"));
@@ -236,18 +285,22 @@ public class BookingService(
 
     public async Task<Result> AdminCancelBookingAsync(int hotelId,int bookingId)
     {
-        string? userId = httpContextAccessor.HttpContext?.User?
-            .FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        string? userId = UserId;
+        bool isAdmin = IsAdmin;
 
         if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
             ErrorCodes.Validation, "User is Required"));
 
-        bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
-            a => a.ApplicationUserId == userId
-            && a.HotelId == hotelId);
+        if (!isAdmin)
+        {
+            bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
+                h => h.ApplicationUserId == userId
+                && h.HotelId == hotelId);
 
-        if (!isHotelAdmin) return Result.Forbidden(new Error(
-            ErrorCodes.Forbidden, "Must be a HotelAdmin"));
+            if (!isHotelAdmin) return Result.Forbidden(new Error(
+            ErrorCodes.Forbidden, "Must Be Admin or HotelAdmin"));
+        }
 
         Booking? booking = await context.Bookings.FirstOrDefaultAsync(
             b => b.BookingId == bookingId
@@ -273,18 +326,21 @@ public class BookingService(
 
     public async Task<Result> AdminConfirmBookingAsync(int hotelId,int bookingId)
     {
-        string? userId = httpContextAccessor.HttpContext?.User?
-            .FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        string? userId = UserId;
+        bool isAdmin = IsAdmin;
 
         if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
             ErrorCodes.Validation, "User is Required"));
 
-        bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
-            a => a.ApplicationUserId == userId 
-            && a.HotelId == hotelId);
+        if (!isAdmin)
+        {
+            bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
+                h => h.ApplicationUserId == userId 
+                && h.HotelId == hotelId);
 
-        if (!isHotelAdmin) return Result.Forbidden(new Error(
-            ErrorCodes.Forbidden, "Must be A HotelAdmin"));
+            if(!isHotelAdmin) return Result.Forbidden(new Error(
+            ErrorCodes.Forbidden, "Must Be Admin or HotelAdmin"));
+        }
 
         Booking? booking = await context.Bookings.FirstOrDefaultAsync(
             b => b.BookingId == bookingId
@@ -306,4 +362,5 @@ public class BookingService(
 
         return Result.Success();
     }
+
 }

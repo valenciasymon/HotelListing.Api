@@ -13,10 +13,22 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
 {
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GetBookingDto>>> GetBooking([FromRoute]int hotelId)
+    [Authorize(Roles = "Admin,HotelAdmin")]
+    public async Task<ActionResult<IEnumerable<GetBookingDto>>> GetBookingAdmin(
+        [FromRoute]int hotelId)
     {
         Result<IEnumerable<GetBookingDto>> bookings = await bookingService
-            .GetBookingAsync(hotelId);
+            .GetBookingAdminAsync(hotelId);
+
+        return ToActionResult(bookings);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<GetBookingDto>>> GetBooking(
+        [FromRoute]int hotelId)
+    {
+        Result<IEnumerable<GetBookingDto>> bookings = await bookingService
+            .GetBookingUserAsync(hotelId);
 
         return ToActionResult(bookings);
     }
@@ -53,22 +65,22 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
     }
 
 
-    [Authorize(Roles ="Admin")]
-    [HttpPut("{bookingId:int}/admin/cancel")]
-    public async Task<ActionResult> AdminCancelBooking(int hotelId,int bookingId)
-    {
-        Result booking = await bookingService.AdminCancelBookingAsync(hotelId,bookingId);
+        [Authorize(Roles ="Admin,HotelAdmin")]
+        [HttpPut("{bookingId:int}/admin/cancel")]
+        public async Task<ActionResult> AdminCancelBooking(int hotelId,int bookingId)
+        {
+            Result booking = await bookingService.AdminCancelBookingAsync(hotelId,bookingId);
 
-        return ToActionResult(booking);
-    }
+            return ToActionResult(booking);
+        }
 
 
-    [Authorize(Roles = "Admin")]
-    [HttpPut("{bookingId:int}/admin/confirm")]
-    public async Task<ActionResult> AdminConfirmBooking(int hotelId,int bookingId)
-    {
-        Result booking = await bookingService.AdminConfirmBookingAsync(hotelId, bookingId);
+        [Authorize(Roles = "Admin,HotelAdmin")]
+        [HttpPut("{bookingId:int}/admin/confirm")]
+        public async Task<ActionResult> AdminConfirmBooking(int hotelId,int bookingId)
+        {
+            Result booking = await bookingService.AdminConfirmBookingAsync(hotelId, bookingId);
 
-        return ToActionResult(booking);
-    }
+            return ToActionResult(booking);
+        }
 }
