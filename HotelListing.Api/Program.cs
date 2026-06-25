@@ -35,6 +35,7 @@ namespace HotelListing.Api
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>
                     (AuthenticationDefaults.BasicScheme, _ => { })

@@ -19,29 +19,8 @@ public class BookingService(
     private string? UserId => httpContextAccessor.HttpContext?
         .User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
-    private bool IsAdmin => httpContextAccessor.HttpContext?.User?.
-        IsInRole("Admin") ?? false;
-
     public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingAdminAsync(int hotelId)
     {
-        string? userId = UserId;
-        bool isAdmin = IsAdmin;
-
-        if (string.IsNullOrEmpty(userId)) return Result<IEnumerable<GetBookingDto>>
-                .BadRequest(new Error(ErrorCodes.Validation, "User is Required"));
-
-        if (!isAdmin)
-        {
-            bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
-                h => h.ApplicationUserId == userId
-                && h.HotelId == hotelId);
-
-            if (!isHotelAdmin) return Result<IEnumerable<GetBookingDto>>
-                    .Forbidden(new Error(
-                        ErrorCodes.Forbidden,
-                        "Must Be Admin or HotelAdmin"));
-        }
-
         bool hotelExist = await context.Hotels.AnyAsync(h => h.Id == hotelId);
 
         if (!hotelExist)
@@ -72,9 +51,9 @@ public class BookingService(
     {
         string? userId = UserId;
 
-        if (string.IsNullOrEmpty(userId)) return Result<IEnumerable<GetBookingDto>>.BadRequest(new Error(
-            ErrorCodes.Validation,"User is Required"));
-        
+        if (string.IsNullOrEmpty(userId)) return Result<IEnumerable<GetBookingDto>>.BadRequest(
+            new Error(ErrorCodes.Validation, "User is Required"));
+
         bool hotelExist = await context.Hotels.AnyAsync(h => h.Id == hotelId);
 
         if (!hotelExist) return Result<IEnumerable<GetBookingDto>>.NotFound(new Error(
@@ -117,18 +96,6 @@ public class BookingService(
                 ErrorCodes.Validation, "User is Required"));
         }
 
-        var night = createBookingDto.CheckOut.DayNumber - 
-            createBookingDto.CheckIn.DayNumber;
-
-        if (night <= 0)
-        {
-            return Result<GetBookingDto>.BadRequest(new Error(
-                ErrorCodes.Validation, "CheckOut Must Be After CheckIn"));
-        }
-
-        if (createBookingDto.Guests <= 0) return Result<GetBookingDto>.BadRequest(
-            new Error(ErrorCodes.Validation, "Guest Must Be Atleast 1"));
-
         Hotel? hotel = await context.Hotels
             .Where(h => h.Id == createBookingDto.HotelId)
             .FirstOrDefaultAsync();
@@ -151,7 +118,9 @@ public class BookingService(
                     "The Selected Dates Overlap With An Existing Booking"));
         }
 
-        decimal TotalPrice = hotel.PerNightRate * night;
+        var nights = createBookingDto.CheckOut.DayNumber -
+            createBookingDto.CheckIn.DayNumber;
+        decimal TotalPrice = hotel.PerNightRate * nights;
 
         var booking = new Booking
         {
@@ -194,15 +163,6 @@ public class BookingService(
         if (string.IsNullOrEmpty(userId)) return Result<GetBookingDto>.BadRequest(
             new Error(ErrorCodes.Validation, "User Is Required"));
 
-        int nights = updateBookingDto.CheckOut.DayNumber -
-            updateBookingDto.CheckIn.DayNumber;
-
-        if (nights <= 0) return Result<GetBookingDto>.BadRequest(
-            new Error(ErrorCodes.Validation, "CheckIn Must Be Before CheckOut"));
-
-        if (updateBookingDto.Guests <= 0) return Result<GetBookingDto>.BadRequest(
-            new Error(ErrorCodes.Validation, "Guest Must be Atleast 1"));
-
         bool overlaps = await context.Bookings.AnyAsync(
             b => b.HotelId == hotelId
             && b.BookingId != bookingId
@@ -229,12 +189,13 @@ public class BookingService(
             new Error(ErrorCodes.Conflict, "Cancelled Booking Cannot Be Modified"));
 
         decimal perNight = booking.Hotel!.PerNightRate;
+        var nights = updateBookingDto.CheckOut.DayNumber -
+            updateBookingDto.CheckIn.DayNumber;
 
         booking.CheckIn = updateBookingDto.CheckIn;
         booking.CheckOut = updateBookingDto.CheckOut;
         booking.Guests = updateBookingDto.Guests;
-        booking.TotalPrice = perNight * 
-            (updateBookingDto.CheckOut.DayNumber - updateBookingDto.CheckIn.DayNumber);
+        booking.TotalPrice = perNight * nights;
         booking.UpdateAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
@@ -285,23 +246,6 @@ public class BookingService(
 
     public async Task<Result> AdminCancelBookingAsync(int hotelId,int bookingId)
     {
-
-        string? userId = UserId;
-        bool isAdmin = IsAdmin;
-
-        if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
-            ErrorCodes.Validation, "User is Required"));
-
-        if (!isAdmin)
-        {
-            bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
-                h => h.ApplicationUserId == userId
-                && h.HotelId == hotelId);
-
-            if (!isHotelAdmin) return Result.Forbidden(new Error(
-            ErrorCodes.Forbidden, "Must Be Admin or HotelAdmin"));
-        }
-
         Booking? booking = await context.Bookings.FirstOrDefaultAsync(
             b => b.BookingId == bookingId
             && b.HotelId == hotelId);
@@ -326,22 +270,6 @@ public class BookingService(
 
     public async Task<Result> AdminConfirmBookingAsync(int hotelId,int bookingId)
     {
-        string? userId = UserId;
-        bool isAdmin = IsAdmin;
-
-        if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
-            ErrorCodes.Validation, "User is Required"));
-
-        if (!isAdmin)
-        {
-            bool isHotelAdmin = await context.HotelAdmins.AnyAsync(
-                h => h.ApplicationUserId == userId 
-                && h.HotelId == hotelId);
-
-            if(!isHotelAdmin) return Result.Forbidden(new Error(
-            ErrorCodes.Forbidden, "Must Be Admin or HotelAdmin"));
-        }
-
         Booking? booking = await context.Bookings.FirstOrDefaultAsync(
             b => b.BookingId == bookingId
             && b.HotelId == hotelId);
