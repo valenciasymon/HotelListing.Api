@@ -15,7 +15,8 @@ namespace HotelListing.Api.Services;
 public class UserService(
     UserManager<ApplicationUser> userManager,
     IConfiguration configuration,
-    RoleManager<IdentityRole> roleManager) : IUserService
+    RoleManager<IdentityRole> roleManager,
+    HotelListingDbContext context) : IUserService
 {
     public async Task<Result<RegisteredUserDto>> RegisterAsync(RegisterUserDto registerUserDto)
     {
@@ -50,6 +51,18 @@ public class UserService(
         }
 
         await userManager.AddToRoleAsync(user, registerUserDto.Role);
+
+        if(registerUserDto.Role == "HotelAdmin")
+        {
+            HotelAdmin hotelAdmin = new HotelAdmin
+            {
+                HotelId = registerUserDto.AssociatedHotelId.GetValueOrDefault(),
+                ApplicationUserId = user.Id
+            };
+
+            await context.AddAsync(hotelAdmin);
+            await context.SaveChangesAsync();
+        }
 
         RegisteredUserDto registeredUserDto = new RegisteredUserDto
         {

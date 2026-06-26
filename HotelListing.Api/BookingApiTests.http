@@ -1,0 +1,64 @@
+### variables
+@json = application/json
+@host = https://localhost:7229
+@hotelId =3
+@bookingId =1
+@today = {{$localDatetime iso8601}}
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTUwOGViZC1iMmI1LTQ4NGUtODQ3Ni05MDUxNjdiNzMzYTIiLCJlbWFpbCI6IkhhZG1pbkBnbWFpbC5jb20iLCJqdGkiOiJhMGUwZTRhYy1hOGQxLTQ1ZjUtOTIyYS0yOGYyODdjZTZkZWUiLCJuYW1lIjoiSm9obiBEb2UiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJIb3RlbEFkbWluIiwiZXhwIjoxNzgyNDgwNDAwLCJpc3MiOiJIb3RlbExpc3RpbmdBcGkiLCJhdWQiOiJIb3RlbExpc3RpbmdBcGlDbGllbnQifQ.fVqqTEicwyp8Y1IYzOW5PKrW-iQ-Ajs651STr0IE5is
+###
+
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email":"Hadmin@gmail.com",
+  "password":"P@ssword1",
+  "FirstName":"John",
+  "LastName":"Doe",
+  "Role":"HotelAdmin",
+  "AssociatedHotelId":"3"
+}
+
+###
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email":"Hadmin@gmail.com",
+  "password":"P@ssword1"
+}
+
+###
+POST {{host}}/api/hotels/{{hotelId}}/bookings
+Content-Type: {{json}}
+Authorization: Bearer {{token}}
+
+{
+    "HotelId":3,
+    "CheckIn":"2026-10-15",
+    "CheckOut":"2026-10-20",
+    "Guests":3
+}
+###
+POST {{host}}/api/hotels/{{hotelId}}/bookings
+Content-Type: {{json}}
+Authorization: Bearer {{token}}
+
+{
+    "HotelId":3,
+    "CheckIn":"2026-11-11",
+    "CheckOut":"2026-11-12",
+    "Guests":5
+}
+
+###
+POST {{host}}/api/hotels/{{hotelId}}/bookings
+Content-Type: {{json}}
+Authorization: Bearer {{token}}
+
+{
+    "HotelId":3,
+    "CheckIn":"2026-09-15",
+    "CheckOut":"2026-09-14",
+    "Guests":2
+}

@@ -3,8 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
-namespace HotelListing.Api.AuthenticationFilters;
+namespace HotelListing.Api.AuthorizationFilters;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
 public sealed class HotelSystemAdminAttribute : TypeFilterAttribute
@@ -33,7 +34,8 @@ public class HotelOrSytemAdminFilter(HotelListingDbContext dbContext) :
             return;
         }
 
-        string? userId = httpUser.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        string? userId = httpUser.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+            httpUser.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
 
         if (string.IsNullOrEmpty(userId))
         {

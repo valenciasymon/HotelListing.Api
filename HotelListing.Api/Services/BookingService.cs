@@ -5,9 +5,7 @@ using HotelListing.Api.Data.Enums;
 using HotelListing.Api.DTOs.BookingDto;
 using HotelListing.Api.Results;
 using Microsoft.EntityFrameworkCore;
-using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http.Headers;
 using System.Security.Claims;
 
 namespace HotelListing.Api.Services;
@@ -16,8 +14,10 @@ public class BookingService(
     HotelListingDbContext context,
     IHttpContextAccessor httpContextAccessor) : IBookingService
 {
-    private string? UserId => httpContextAccessor.HttpContext?
-        .User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+    private string UserId => httpContextAccessor.HttpContext?
+        .User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+        httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+        string.Empty;
 
     public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingAdminAsync(int hotelId)
     {
@@ -49,7 +49,7 @@ public class BookingService(
 
     public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingUserAsync(int hotelId)
     {
-        string? userId = UserId;
+        string userId = UserId;
 
         if (string.IsNullOrEmpty(userId)) return Result<IEnumerable<GetBookingDto>>.BadRequest(
             new Error(ErrorCodes.Validation, "User is Required"));
@@ -88,7 +88,7 @@ public class BookingService(
                 ErrorCodes.Validation, "Mismatch Hotel Id"));
         }
 
-        string? userId = UserId;
+        string userId = UserId;
             
         if (string.IsNullOrWhiteSpace(userId))
         {
@@ -158,18 +158,16 @@ public class BookingService(
     public async Task<Result<GetBookingDto>> UpdateBookingAsync(
         int hotelId,int bookingId,UpdateBookingDto updateBookingDto)
     {
-        string? userId = UserId;
+        string userId = UserId;
 
         if (string.IsNullOrEmpty(userId)) return Result<GetBookingDto>.BadRequest(
             new Error(ErrorCodes.Validation, "User Is Required"));
 
-        bool overlaps = await context.Bookings.AnyAsync(
-            b => b.HotelId == hotelId
-            && b.BookingId != bookingId
-            && b.Status != BookingStatus.Cancelled
-            && updateBookingDto.CheckIn < b.CheckOut
-            && updateBookingDto.CheckOut > b.CheckIn
-            && b.ApplicationUserId == userId);
+        bool overlaps = await IsOverlap(
+            userId,bookingId,
+            hotelId,
+            updateBookingDto.CheckIn,
+            updateBookingDto.CheckOut);
 
         if (overlaps) return Result<GetBookingDto>.Conflict(
             new Error(
@@ -217,7 +215,7 @@ public class BookingService(
 
     public async Task<Result> CancelBookingAsync(int hotelId,int bookingId)
     {
-        string? userId = UserId;
+        string userId = UserId;
 
         if (string.IsNullOrEmpty(userId)) return Result.BadRequest(new Error(
             ErrorCodes.Validation, "User is Required"));
@@ -291,4 +289,15 @@ public class BookingService(
         return Result.Success();
     }
 
+
+    public async Task<bool> IsOverlap(
+        string userId,int bookingId,int hotelId,DateOnly checkIn,DateOnly checkOut)
+    {
+        return await context.Bookings.AnyAsync(
+            b => b.HotelId == hotelId
+            && b.Status != BookingStatus.Pending
+            && checkIn < b.CheckOut
+            && checkOut > b.CheckIn
+            && b.ApplicationUserId == userId);
+    }
 }

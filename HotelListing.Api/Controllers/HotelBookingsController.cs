@@ -1,4 +1,4 @@
-﻿using HotelListing.Api.AuthenticationFilters;
+﻿using HotelListing.Api.AuthorizationFilters;
 using HotelListing.Api.Contracts;
 using HotelListing.Api.DTOs.BookingDto;
 using HotelListing.Api.Results;
