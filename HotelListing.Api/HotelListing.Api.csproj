@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HotelListing.Api.Domain\HotelListing.Api.Domain.csproj" />
+    <ProjectReference Include="..\HotelListing.Api.Application\HotelListing.Api.Application.csproj" />
   </ItemGroup>
-
+	
 </Project>

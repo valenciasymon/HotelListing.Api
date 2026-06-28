@@ -1,7 +1,7 @@
 ﻿using HotelListing.Api.DTOs.BookingDto;
 using HotelListing.Api.Common.Results;
 
-namespace HotelListing.Api.Contracts
+namespace HotelListing.Api.Application.Contracts
 {
     public interface IBookingService
     {

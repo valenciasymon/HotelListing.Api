@@ -1,7 +1,7 @@
 ﻿using HotelListing.Api.Common.Constants;
 using HotelListing.Api.Common.Models;
 using HotelListing.Api.Common.Results;
-using HotelListing.Api.Contracts;
+using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Domain;
 using HotelListing.Api.DTOs.AuthDto;
 using Microsoft.AspNetCore.Identity;
@@ -11,7 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace HotelListing.Api.Services;
+namespace HotelListing.Api.Application.Services;
 
 public class UserService(
     UserManager<ApplicationUser> userManager,

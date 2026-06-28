@@ -1,4 +1,4 @@
-﻿namespace HotelListing.Api.Contracts
+﻿namespace HotelListing.Api.Application.Contracts
 {
     public interface IApiKeyValidatorService
     {

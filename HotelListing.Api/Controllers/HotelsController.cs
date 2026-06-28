@@ -2,7 +2,7 @@ using HotelListing.Api.Common.Constants;
 using HotelListing.Api.Common.Results;
 using HotelListing.Api.Controllers;
 using HotelListing.Api.DTOs.HotelDto;
-using HotelListing.Api.Services;
+using HotelListing.Api.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,5 +1,5 @@
 ﻿using HotelListing.Api.Common.Constants;
-using HotelListing.Api.Contracts;
+using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Domain;
 using HotelListing.Api.Domain.Enums;
 using HotelListing.Api.DTOs.BookingDto;
@@ -7,8 +7,9 @@ using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
-namespace HotelListing.Api.Services;
+namespace HotelListing.Api.Application.Services;
 
 public class BookingService(
     HotelListingDbContext context,

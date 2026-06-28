@@ -6,7 +6,7 @@ using HotelListing.Api.DTOs.HotelDto;
 using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
 
-namespace HotelListing.Api.Services;
+namespace HotelListing.Api.Application.Services;
 
 public class HotelsService(HotelListingDbContext context) : IHotelsService
 {

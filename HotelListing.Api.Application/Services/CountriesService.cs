@@ -5,7 +5,7 @@ using HotelListing.Api.DTOs.CountryDto;
 using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
 
-namespace HotelListing.Api.Services;
+namespace HotelListing.Api.Application.Services;
 
 public class CountriesService(HotelListingDbContext context) : ICountriesService
 {

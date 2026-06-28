@@ -1,7 +1,7 @@
 ﻿using HotelListing.Api.DTOs.CountryDto;
 using HotelListing.Api.Common.Results;
 
-namespace HotelListing.Api.Services
+namespace HotelListing.Api.Application.Services
 {
     public interface ICountriesService
     {

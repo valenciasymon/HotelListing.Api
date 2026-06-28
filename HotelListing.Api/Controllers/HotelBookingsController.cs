@@ -1,7 +1,7 @@
 ﻿using HotelListing.Api.AuthorizationFilters;
 using HotelListing.Api.Common.Constants;
 using HotelListing.Api.Common.Results;
-using HotelListing.Api.Contracts;
+using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.DTOs.BookingDto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

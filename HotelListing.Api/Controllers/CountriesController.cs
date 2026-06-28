@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using HotelListing.Api.DTOs.CountryDto;
-using HotelListing.Api.Services;
+using HotelListing.Api.Application.Services;
 using HotelListing.Api.Common.Results;
 using HotelListing.Api.Controllers;
 using Microsoft.AspNetCore.Authorization;
