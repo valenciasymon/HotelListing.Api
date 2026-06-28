@@ -1,8 +1,8 @@
 ﻿
-using HotelListing.Api.Constants;
-using HotelListing.Api.Data;
+using HotelListing.Api.Common.Constants;
+using HotelListing.Api.Domain;
 using HotelListing.Api.DTOs.CountryDto;
-using HotelListing.Api.Results;
+using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.Api.Services;

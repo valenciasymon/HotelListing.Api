@@ -1,12 +1,13 @@
-﻿using HotelListing.Api.Constants;
+﻿using HotelListing.Api.Common.Constants;
+using HotelListing.Api.Common.Models;
+using HotelListing.Api.Common.Results;
 using HotelListing.Api.Contracts;
-using HotelListing.Api.Data;
+using HotelListing.Api.Domain;
 using HotelListing.Api.DTOs.AuthDto;
-using HotelListing.Api.Results;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text;
 
@@ -14,7 +15,7 @@ namespace HotelListing.Api.Services;
 
 public class UserService(
     UserManager<ApplicationUser> userManager,
-    IConfiguration configuration,
+    IOptions<JwtSettings> options,
     RoleManager<IdentityRole> roleManager,
     HotelListingDbContext context) : IUserService
 {
@@ -52,7 +53,7 @@ public class UserService(
 
         await userManager.AddToRoleAsync(user, registerUserDto.Role);
 
-        if(registerUserDto.Role == "HotelAdmin")
+        if (registerUserDto.Role == "HotelAdmin")
         {
             HotelAdmin hotelAdmin = new HotelAdmin
             {
@@ -105,7 +106,7 @@ public class UserService(
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Name,$"{user.FirstName} {user.LastName}")
         };
@@ -119,7 +120,7 @@ public class UserService(
 
         //set jwt key Credentials
         SymmetricSecurityKey securityKey = new SymmetricSecurityKey
-            (Encoding.UTF8.GetBytes(configuration["JwtSettings:Key"]));
+            (Encoding.UTF8.GetBytes(options.Value.Key));
 
         SigningCredentials credentials = new SigningCredentials(
             securityKey,
@@ -128,11 +129,11 @@ public class UserService(
         //jwt creation
 
         JwtSecurityToken token = new JwtSecurityToken(
-            issuer: configuration["JwtSettings:Issuer"],
-            audience: configuration["JwtSettings:Audience"],
+            issuer: options.Value.Issuer,
+            audience: options.Value.Audience,
             claims: claims,
             expires: DateTime.UtcNow
-            .AddMinutes(Convert.ToInt32(configuration["JwtSettings:DurationInMinutes"])),
+            .AddMinutes(Convert.ToInt32(options.Value.DurationInMinutes)),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

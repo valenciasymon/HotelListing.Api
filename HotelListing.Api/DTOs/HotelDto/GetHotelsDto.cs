@@ -4,4 +4,5 @@ public record GetHotelsDto(
     int Id,
     string Name,
     string Address,
-    double Rating);
+    double Rating,
+    decimal PerNightRate);

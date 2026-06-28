@@ -1,5 +1,5 @@
 ﻿using HotelListing.Api.DTOs.BookingDto;
-using HotelListing.Api.Results;
+using HotelListing.Api.Common.Results;
 
 namespace HotelListing.Api.Contracts
 {

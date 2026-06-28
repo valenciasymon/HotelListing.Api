@@ -2,16 +2,16 @@
 @json = application/json
 @host = https://localhost:7229
 @hotelId =3
-@bookingId =1
+@bookingId =10
 @today = {{$localDatetime iso8601}}
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTUwOGViZC1iMmI1LTQ4NGUtODQ3Ni05MDUxNjdiNzMzYTIiLCJlbWFpbCI6IkhhZG1pbkBnbWFpbC5jb20iLCJqdGkiOiJhMGUwZTRhYy1hOGQxLTQ1ZjUtOTIyYS0yOGYyODdjZTZkZWUiLCJuYW1lIjoiSm9obiBEb2UiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJIb3RlbEFkbWluIiwiZXhwIjoxNzgyNDgwNDAwLCJpc3MiOiJIb3RlbExpc3RpbmdBcGkiLCJhdWQiOiJIb3RlbExpc3RpbmdBcGlDbGllbnQifQ.fVqqTEicwyp8Y1IYzOW5PKrW-iQ-Ajs651STr0IE5is
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZmUyMmYyMC01YmQwLTQwYmUtOTA5Yy00OTk0Y2Y3OWJjOWQiLCJlbWFpbCI6IkhPYWRtaW5AZ21haWwuY29tIiwianRpIjoiZTRkMjY4NjQtZTVlNy00NTQ1LWIwMDEtNWQwNGU4ZTJmOWJiIiwibmFtZSI6IkpvaG4gRG9lIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiSG90ZWxBZG1pbiIsImV4cCI6MTc4MjYzNDkxOSwiaXNzIjoiSG90ZWxMaXN0aW5nQXBpIiwiYXVkIjoiSG90ZWxMaXN0aW5nQXBpQ2xpZW50In0.aTuqqOZaaf0amgOYEXb47jzZpcWrbS1izQlc2BwFWzA
 ###
 
 POST {{host}}/api/auth/register
 Content-Type: application/json
 
 {
-  "email":"Hadmin@gmail.com",
+  "email":"HOadmin@gmail.com",
   "password":"P@ssword1",
   "FirstName":"John",
   "LastName":"Doe",
@@ -24,7 +24,7 @@ POST {{host}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email":"Hadmin@gmail.com",
+  "email":"HOadmin@gmail.com",
   "password":"P@ssword1"
 }
 
@@ -34,9 +34,9 @@ Content-Type: {{json}}
 Authorization: Bearer {{token}}
 
 {
-    "HotelId":3,
-    "CheckIn":"2026-10-15",
-    "CheckOut":"2026-10-20",
+    "HotelId":{{hotelId}},
+    "CheckIn":"2026-01-15",
+    "CheckOut":"2026-01-26",
     "Guests":3
 }
 ###
@@ -46,8 +46,8 @@ Authorization: Bearer {{token}}
 
 {
     "HotelId":3,
-    "CheckIn":"2026-11-11",
-    "CheckOut":"2026-11-12",
+    "CheckIn":"2026-02-04",
+    "CheckOut":"2026-02-05",
     "Guests":5
 }
 
@@ -62,3 +62,48 @@ Authorization: Bearer {{token}}
     "CheckOut":"2026-09-14",
     "Guests":2
 }
+###
+POST {{host}}/api/hotels/{{hotelId}}/bookings
+Content-Type: {{json}}
+Authorization: Bearer {{token}}
+
+{
+    "HotelId":3,
+    "CheckIn":"2026-09-04",
+    "CheckOut":"2026-09-20",
+    "Guests":0
+}
+
+###
+PUT {{host}}/api/hotels/{{hotelId}}/bookings/{{bookingId}}
+Content-Type: {{json}}
+Authorization: Bearer {{token}}
+
+{
+    "HotelId":3,
+    "CheckIn":"2026-02-05",
+    "CheckOut":"2026-02-24",
+    "Guests":7
+}
+
+###
+
+PUT {{host}}/api/hotels/{{hotelId}}/bookings/{{bookingId}}/cancel
+Authorization: Bearer {{token}}
+###
+
+PUT {{host}}/api/hotels/{{hotelId}}/bookings/{{bookingId}}/admin/cancel
+Authorization: Bearer {{token}}
+###
+
+PUT {{host}}/api/hotels/{{hotelId}}/bookings/{{bookingId}}/admin/confirm
+Authorization: Bearer {{token}}
+###
+
+GET {{host}}/api/hotels/{{hotelId}}/bookings/admin
+Authorization: Bearer {{token}}
+
+###
+
+GET {{host}}/api/hotels/{{hotelId}}/bookings/
+Authorization: Bearer {{token}}

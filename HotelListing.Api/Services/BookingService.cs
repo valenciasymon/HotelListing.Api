@@ -1,9 +1,9 @@
-﻿using HotelListing.Api.Constants;
+﻿using HotelListing.Api.Common.Constants;
 using HotelListing.Api.Contracts;
-using HotelListing.Api.Data;
-using HotelListing.Api.Data.Enums;
+using HotelListing.Api.Domain;
+using HotelListing.Api.Domain.Enums;
 using HotelListing.Api.DTOs.BookingDto;
-using HotelListing.Api.Results;
+using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -103,12 +103,11 @@ public class BookingService(
         if (hotel == null) return Result<GetBookingDto>.NotFound(new Error(
             ErrorCodes.NotFound, "Hotel Not Found"));
 
-        bool overlaps = await context.Bookings.AnyAsync(
-                b => b.HotelId == createBookingDto.HotelId
-                && b.Status != BookingStatus.Cancelled
-                && createBookingDto.CheckIn < b.CheckOut
-                && createBookingDto.CheckOut > b.CheckIn
-                && b.ApplicationUserId == userId);
+        bool overlaps = await IsOverlap(
+            userId,
+            hotelId,
+            createBookingDto.CheckIn,
+            createBookingDto.CheckOut);
 
         if (overlaps)
         {
@@ -164,10 +163,11 @@ public class BookingService(
             new Error(ErrorCodes.Validation, "User Is Required"));
 
         bool overlaps = await IsOverlap(
-            userId,bookingId,
+            userId,
             hotelId,
             updateBookingDto.CheckIn,
-            updateBookingDto.CheckOut);
+            updateBookingDto.CheckOut,
+            bookingId);
 
         if (overlaps) return Result<GetBookingDto>.Conflict(
             new Error(
@@ -291,13 +291,25 @@ public class BookingService(
 
 
     public async Task<bool> IsOverlap(
-        string userId,int bookingId,int hotelId,DateOnly checkIn,DateOnly checkOut)
+        string userId,
+        int hotelId,
+        DateOnly checkIn,
+        DateOnly checkOut,
+        int? bookingId = null)
     {
-        return await context.Bookings.AnyAsync(
+        IQueryable<Booking> query =  context.Bookings.Where(
             b => b.HotelId == hotelId
-            && b.Status != BookingStatus.Pending
+            && b.Status != BookingStatus.Cancelled
             && checkIn < b.CheckOut
             && checkOut > b.CheckIn
-            && b.ApplicationUserId == userId);
+            && b.ApplicationUserId == userId)
+            .AsQueryable();
+
+        if(bookingId != null)
+        {
+            query = query.Where(q => q.BookingId != bookingId);
+        }
+
+        return await query.AnyAsync();
     }
 }

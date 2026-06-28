@@ -1,4 +1,5 @@
-﻿using HotelListing.Api.Data;
+﻿using HotelListing.Api.Common.Constants;
+using HotelListing.Api.Domain;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,7 @@ public class HotelOrSytemAdminFilter(HotelListingDbContext dbContext) :
             return;
         }
 
-        if (httpUser!.IsInRole("Admin"))
+        if (httpUser!.IsInRole(RoleNames.Admin))
         {
             return;
         }

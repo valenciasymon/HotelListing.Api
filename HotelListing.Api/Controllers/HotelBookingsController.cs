@@ -1,7 +1,8 @@
 ﻿using HotelListing.Api.AuthorizationFilters;
+using HotelListing.Api.Common.Constants;
+using HotelListing.Api.Common.Results;
 using HotelListing.Api.Contracts;
 using HotelListing.Api.DTOs.BookingDto;
-using HotelListing.Api.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,13 +11,13 @@ namespace HotelListing.Api.Controllers;
 [ApiController]
 [Route("api/hotels/{hotelId:int}/bookings")]
 [Authorize]
-public class HotelBookingsController(IBookingService bookingService): BaseApiController
+public class HotelBookingsController(IBookingService bookingService) : BaseApiController
 {
 
-    [HttpGet]
+    [HttpGet(RoleNames.Admin)]
     [HotelSystemAdmin]
     public async Task<ActionResult<IEnumerable<GetBookingDto>>> GetBookingAdmin(
-        [FromRoute]int hotelId)
+        [FromRoute] int hotelId)
     {
         Result<IEnumerable<GetBookingDto>> bookings = await bookingService
             .GetBookingAdminAsync(hotelId);
@@ -26,7 +27,7 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<GetBookingDto>>> GetBooking(
-        [FromRoute]int hotelId)
+        [FromRoute] int hotelId)
     {
         Result<IEnumerable<GetBookingDto>> bookings = await bookingService
             .GetBookingUserAsync(hotelId);
@@ -40,7 +41,7 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
         CreateBookingDto createBookingDto)
     {
         Result<GetBookingDto> booking = await bookingService
-            .CreateBookingAsync(hotelId,createBookingDto);
+            .CreateBookingAsync(hotelId, createBookingDto);
 
         return ToActionResult(booking);
     }
@@ -58,7 +59,7 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
     }
 
     [HttpPut("{bookingId:int}/cancel")]
-    public async Task<ActionResult> CancelBooking(int hotelId,int bookingId)
+    public async Task<ActionResult> CancelBooking(int hotelId, int bookingId)
     {
         Result booking = await bookingService.CancelBookingAsync(hotelId, bookingId);
 
@@ -66,22 +67,22 @@ public class HotelBookingsController(IBookingService bookingService): BaseApiCon
     }
 
 
-        [HotelSystemAdmin]
-        [HttpPut("{bookingId:int}/admin/cancel")]
-        public async Task<ActionResult> AdminCancelBooking(int hotelId,int bookingId)
-        {
-            Result booking = await bookingService.AdminCancelBookingAsync(hotelId,bookingId);
+    [HotelSystemAdmin]
+    [HttpPut("{bookingId:int}/admin/cancel")]
+    public async Task<ActionResult> AdminCancelBooking(int hotelId, int bookingId)
+    {
+        Result booking = await bookingService.AdminCancelBookingAsync(hotelId, bookingId);
 
-            return ToActionResult(booking);
-        }
+        return ToActionResult(booking);
+    }
 
 
-        [HotelSystemAdmin]
-        [HttpPut("{bookingId:int}/admin/confirm")]
-        public async Task<ActionResult> AdminConfirmBooking(int hotelId,int bookingId)
-        {
-            Result booking = await bookingService.AdminConfirmBookingAsync(hotelId, bookingId);
+    [HotelSystemAdmin]
+    [HttpPut("{bookingId:int}/admin/confirm")]
+    public async Task<ActionResult> AdminConfirmBooking(int hotelId, int bookingId)
+    {
+        Result booking = await bookingService.AdminConfirmBookingAsync(hotelId, bookingId);
 
-            return ToActionResult(booking);
-        }
+        return ToActionResult(booking);
+    }
 }

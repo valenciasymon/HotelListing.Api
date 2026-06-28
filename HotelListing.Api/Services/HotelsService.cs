@@ -1,9 +1,9 @@
 ﻿
 
-using HotelListing.Api.Constants;
-using HotelListing.Api.Data;
+using HotelListing.Api.Common.Constants;
+using HotelListing.Api.Domain;
 using HotelListing.Api.DTOs.HotelDto;
-using HotelListing.Api.Results;
+using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing.Api.Services;
@@ -17,7 +17,8 @@ public class HotelsService(HotelListingDbContext context) : IHotelsService
                 h.Id,
                 h.Name,
                 h.Address,
-                h.Rating))
+                h.Rating,
+                h.PerNightRate))
             .ToListAsync();
 
         return Result<IEnumerable<GetHotelsDto>>.Success(hotels);
@@ -32,6 +33,7 @@ public class HotelsService(HotelListingDbContext context) : IHotelsService
                 h.Name,
                 h.Address,
                 h.Rating,
+                h.PerNightRate,
                 h.CountryId,
                 h.Country != null ? h.Country.Name : null))
             .FirstOrDefaultAsync();
@@ -82,9 +84,8 @@ public class HotelsService(HotelListingDbContext context) : IHotelsService
             hotel.Name = hotelDto.Name;
             hotel.Address = hotelDto.Address;
             hotel.Rating = hotelDto.Rating;
+            hotel.PerNightRate = hotelDto.PerNightRate;
             hotel.CountryId = hotelDto.CountryId;
-
-            context.Entry(hotel).State = EntityState.Modified;
 
             await context.SaveChangesAsync();
             return Result.Success();
@@ -135,6 +136,7 @@ public class HotelsService(HotelListingDbContext context) : IHotelsService
                 Name = hotelDto.Name,
                 Address = hotelDto.Address,
                 Rating = hotelDto.Rating,
+                PerNightRate = hotelDto.PerNightRate,
                 CountryId = hotelDto.CountryId
             };
 
@@ -150,6 +152,7 @@ public class HotelsService(HotelListingDbContext context) : IHotelsService
                 hotel.Name,
                 hotel.Address,
                 hotel.Rating,
+                hotel.PerNightRate,
                 hotel.CountryId,
                 hotel.Country != null ? hotel.Country.Name : null);
 

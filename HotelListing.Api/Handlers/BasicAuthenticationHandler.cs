@@ -1,12 +1,9 @@
-﻿using HotelListing.Api.Contracts;
-using HotelListing.Api.Data;
+﻿using HotelListing.Api.Common.Results;
+using HotelListing.Api.Contracts;
 using HotelListing.Api.DTOs.AuthDto;
-using HotelListing.Api.Results;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -65,7 +62,7 @@ namespace HotelListing.Api.Handlers
                 Password = password
             };
 
-            Result<string> result =  await userService.LoginAsync(loginUserDto);
+            Result<string> result = await userService.LoginAsync(loginUserDto);
 
             if (!result.IsSuccess)
             {
@@ -77,9 +74,9 @@ namespace HotelListing.Api.Handlers
                 new Claim(ClaimTypes.Name,userNameOrEmail)
             };
 
-            ClaimsIdentity identity = new ClaimsIdentity(claims,Scheme.Name);
+            ClaimsIdentity identity = new ClaimsIdentity(claims, Scheme.Name);
             ClaimsPrincipal principal = new ClaimsPrincipal(identity);
-            AuthenticationTicket ticket = new AuthenticationTicket(principal,Scheme.Name);
+            AuthenticationTicket ticket = new AuthenticationTicket(principal, Scheme.Name);
 
 
             return AuthenticateResult.Success(ticket);
