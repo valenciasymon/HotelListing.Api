@@ -4,14 +4,30 @@ using HotelListing.Api.Domain;
 using HotelListing.Api.DTOs.CountryDto;
 using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
+using HotelListing.Api.Common.Models.Paging;
+using HotelListing.Api.Common.Models.Extensions;
+using HotelListing.Api.DTOs.HotelDto;
+using HotelListing.Api.Common.Models.Filtering;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace HotelListing.Api.Application.Services;
 
 public class CountriesService(HotelListingDbContext context) : ICountriesService
 {
-    public async Task<Result<IEnumerable<GetCountriesDto>>> GetCountriesAsync()
+    public async Task<Result<IEnumerable<GetCountriesDto>>> GetCountriesAsync(
+        CountriesFilterParameter filters)
     {
-        List<GetCountriesDto> countries = await context.Countries
+        IQueryable<Country> query = context.Countries;
+
+        if (!string.IsNullOrWhiteSpace(filters.Search))
+        {
+            string? term = filters.Search.Trim();
+            query = query.Where(c => EF.Functions.Like(c.Name, $"%{term}%")
+            || EF.Functions.Like(c.ShortName, $"%{term}%"));
+        }
+            
+        List<GetCountriesDto> countries = await query
+            .AsNoTracking()
             .Select(c => new GetCountriesDto(
                 c.Id,
                 c.Name,
@@ -21,9 +37,11 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         return Result<IEnumerable<GetCountriesDto>>.Success(countries);
     }
 
+    
     public async Task<Result<GetCountryDto>> GetCountryAsync(int id)
     {
         GetCountryDto? countryDto = await context.Countries
+            .AsNoTracking()
             .Where(c => c.Id == id)
             .Select(c => new GetCountryDto(
                 c.Id,
@@ -74,8 +92,6 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
             country.Name = countryDto.Name;
             country.ShortName = countryDto.ShortName;
 
-            context.Entry(country).State = EntityState.Modified;
-
             await context.SaveChangesAsync();
             
             return Result.Success();
@@ -104,6 +120,7 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         try
         {
             bool exists = await context.Countries
+                .AsNoTracking()
                 .AnyAsync(c => c.Name.ToLower().Trim() ==
                 countryDto.Name.ToLower().Trim());
 
@@ -164,9 +181,103 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         }
     }
 
+    public async Task<Result<PagedResult<GetHotelDto>>> GetCountriesHotelAsync(
+        int countryId,
+        PaginationParameters paginationParameters,
+        HotelFilterParameters filters)
+    {
+        bool countryExist = await CountryExists(countryId);
+
+        if (!countryExist) return Result<PagedResult<GetHotelDto>>.NotFound(new Error(
+            ErrorCodes.NotFound, "Country Not Found"));
+
+        IQueryable<Hotel> query = context.Hotels
+            .Where(h => h.CountryId == countryId);
+
+        if (filters.MinRating.HasValue)
+            query = query.Where(h => h.Rating >= filters.MinRating);
+
+        if (filters.MaxRating.HasValue)
+            query = query.Where(h => h.Rating <= filters.MaxRating);
+
+        if (filters.MinPrice.HasValue)
+            query = query.Where(h => h.PerNightRate >= filters.MinPrice);
+
+        if (filters.MaxPrice.HasValue)
+            query = query.Where(h => h.PerNightRate <= filters.MaxPrice);
+
+        if (!string.IsNullOrWhiteSpace(filters.Location))
+            query = query.Where(h => h.Address.ToLower().Contains(filters.Location.ToLower()));
+
+        if (!string.IsNullOrEmpty(filters.Search))
+            query = query.Where(h => EF.Functions.Like(h.Name, $"%{filters.Search.Trim()}%")
+            || EF.Functions.Like(h.Address,$"%{filters.Search.Trim()}%"));
+
+        query = filters.SortBy?.Trim().ToLowerInvariant() switch
+        {
+            "name" => filters.SortDescending ?
+                query.OrderByDescending(h => h.Name) : query.OrderBy(h => h.Name),
+            "price" => filters.SortDescending ?
+                query.OrderByDescending(h => h.PerNightRate) : query.OrderBy(h => h.PerNightRate),
+            "address" => filters.SortDescending ?
+                query.OrderByDescending(h => h.Address) : query.OrderBy(h => h.Address),
+            _ => query.OrderBy(h => h.Name)
+        };
+
+        PagedResult<GetHotelDto> hotels = await query
+            .AsNoTracking()
+            .Select(h => new GetHotelDto(
+                h.Id,
+                h.Name,
+                h.Address,
+                h.Rating,
+                h.PerNightRate,
+                h.CountryId,
+                h.Country != null ? h.Country.Name : null))
+            .ToPagedResult(paginationParameters);
+
+        return Result<PagedResult<GetHotelDto>>.Success(hotels);
+    }
+
+    public async Task<Result> PatchCountryAsync(int id, JsonPatchDocument<UpdateCountryDto> patchDoc)
+    {
+        Country? country = await context.Countries.FindAsync(id);
+
+        if (country == null) return Result.NotFound(new Error(
+            ErrorCodes.NotFound, "Country Not Found"));
+
+        UpdateCountryDto updateCountryDto = new UpdateCountryDto
+        {
+            Id = country.Id,
+            Name = country.Name,
+            ShortName = country.ShortName
+        };
+
+        patchDoc.ApplyTo(updateCountryDto);
+
+        if (updateCountryDto.Id != id) return Result.BadRequest(new Error(
+            ErrorCodes.Validation, "Cannot Modify Id Field"));
+
+        bool duplicateName = await context.Countries.AnyAsync(
+            c => c.Id != id &&
+            c.Name.Trim().ToLower() == updateCountryDto.Name.Trim().ToLower());
+
+        if (duplicateName) return Result.Conflict(new Error(
+            ErrorCodes.Conflict, "A Country with The Same Name Exist"));
+
+        country.Name = updateCountryDto.Name;
+        country.ShortName = updateCountryDto.ShortName;
+
+        await context.SaveChangesAsync();
+
+        return Result.Success();
+    }
 
     private async Task<bool> CountryExists(int id)
     {
-        return await context.Countries.AnyAsync(c => c.Id == id);
+        return await context.Countries
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == id);
     }
+
 }

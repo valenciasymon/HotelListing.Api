@@ -33,7 +33,7 @@ namespace HotelListing.Api.Handlers
                 return AuthenticateResult.NoResult();
             }
 
-            string token = authHeader["Basic ".Length..].Trim();
+            string token = authHeader["Basic ".Length..];
 
             string decoded;
 

@@ -17,12 +17,12 @@ namespace HotelListing.Api.Domain.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("HotelListing.Api.Data.ApiKey", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.ApiKey", b =>
                 {
                     b.Property<int>("ApiKeyId")
                         .ValueGeneratedOnAdd()
@@ -54,7 +54,7 @@ namespace HotelListing.Api.Domain.Migrations
                     b.ToTable("ApiKeys");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.ApplicationUser", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -127,7 +127,7 @@ namespace HotelListing.Api.Domain.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Booking", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.Booking", b =>
                 {
                     b.Property<int>("BookingId")
                         .ValueGeneratedOnAdd()
@@ -176,7 +176,7 @@ namespace HotelListing.Api.Domain.Migrations
                     b.ToTable("Bookings");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Country", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.Country", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -186,18 +186,22 @@ namespace HotelListing.Api.Domain.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ShortName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("ShortName");
 
                     b.ToTable("Countries");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Hotel", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.Hotel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -214,7 +218,7 @@ namespace HotelListing.Api.Domain.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("PerNightRate")
                         .HasColumnType("decimal(18,2)");
@@ -226,10 +230,14 @@ namespace HotelListing.Api.Domain.Migrations
 
                     b.HasIndex("CountryId");
 
+                    b.HasIndex("Name");
+
+                    b.HasIndex("CountryId", "Rating");
+
                     b.ToTable("Hotels");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.HotelAdmin", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.HotelAdmin", b =>
                 {
                     b.Property<int>("HotelAdminId")
                         .ValueGeneratedOnAdd()
@@ -409,15 +417,15 @@ namespace HotelListing.Api.Domain.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Booking", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.Booking", b =>
                 {
-                    b.HasOne("HotelListing.Api.Data.ApplicationUser", "ApplicationUser")
+                    b.HasOne("HotelListing.Api.Domain.ApplicationUser", "ApplicationUser")
                         .WithMany()
                         .HasForeignKey("ApplicationUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("HotelListing.Api.Data.Hotel", "Hotel")
+                    b.HasOne("HotelListing.Api.Domain.Hotel", "Hotel")
                         .WithMany("Bookings")
                         .HasForeignKey("HotelId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -428,24 +436,24 @@ namespace HotelListing.Api.Domain.Migrations
                     b.Navigation("Hotel");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Hotel", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.Hotel", b =>
                 {
-                    b.HasOne("HotelListing.Api.Data.Country", "Country")
+                    b.HasOne("HotelListing.Api.Domain.Country", "Country")
                         .WithMany("Hotels")
                         .HasForeignKey("CountryId");
 
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.HotelAdmin", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.HotelAdmin", b =>
                 {
-                    b.HasOne("HotelListing.Api.Data.ApplicationUser", "ApplicationUser")
+                    b.HasOne("HotelListing.Api.Domain.ApplicationUser", "ApplicationUser")
                         .WithMany()
                         .HasForeignKey("ApplicationUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("HotelListing.Api.Data.Hotel", "Hotel")
+                    b.HasOne("HotelListing.Api.Domain.Hotel", "Hotel")
                         .WithMany("Admins")
                         .HasForeignKey("HotelId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -467,7 +475,7 @@ namespace HotelListing.Api.Domain.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("HotelListing.Api.Data.ApplicationUser", null)
+                    b.HasOne("HotelListing.Api.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -476,7 +484,7 @@ namespace HotelListing.Api.Domain.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("HotelListing.Api.Data.ApplicationUser", null)
+                    b.HasOne("HotelListing.Api.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -491,7 +499,7 @@ namespace HotelListing.Api.Domain.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("HotelListing.Api.Data.ApplicationUser", null)
+                    b.HasOne("HotelListing.Api.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -500,19 +508,19 @@ namespace HotelListing.Api.Domain.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("HotelListing.Api.Data.ApplicationUser", null)
+                    b.HasOne("HotelListing.Api.Domain.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Country", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.Country", b =>
                 {
                     b.Navigation("Hotels");
                 });
 
-            modelBuilder.Entity("HotelListing.Api.Data.Hotel", b =>
+            modelBuilder.Entity("HotelListing.Api.Domain.Hotel", b =>
                 {
                     b.Navigation("Admins");
 

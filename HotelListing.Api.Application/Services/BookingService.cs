@@ -1,13 +1,16 @@
-﻿using HotelListing.Api.Common.Constants;
-using HotelListing.Api.Application.Contracts;
-using HotelListing.Api.Domain;
-using HotelListing.Api.Domain.Enums;
-using HotelListing.Api.DTOs.BookingDto;
+﻿using HotelListing.Api.Application.Contracts;
+using HotelListing.Api.Common.Constants;
+using HotelListing.Api.Common.Enums;
+using HotelListing.Api.Common.Models.Extensions;
+using HotelListing.Api.Common.Models.Filtering;
+using HotelListing.Api.Common.Models.Paging;
 using HotelListing.Api.Common.Results;
+using HotelListing.Api.Domain;
+using HotelListing.Api.DTOs.BookingDto;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 
 namespace HotelListing.Api.Application.Services;
 
@@ -20,19 +23,26 @@ public class BookingService(
         httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
         string.Empty;
 
-    public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingAdminAsync(int hotelId)
+    public async Task<Result<PagedResult<GetBookingDto>>> GetBookingAdminAsync(
+        int hotelId,
+        PaginationParameters paginationParameters,
+        BookingFilterParameters filters)
     {
         bool hotelExist = await context.Hotels.AnyAsync(h => h.Id == hotelId);
 
         if (!hotelExist)
         {
-            return Result<IEnumerable<GetBookingDto>>.NotFound(
+            return Result<PagedResult<GetBookingDto>>.NotFound(
                 new Error(ErrorCodes.NotFound, "Hotel Not Found"));
         }
 
-        List<GetBookingDto> bookings = await context.Bookings
-            .Where(b => b.HotelId == hotelId)
-            .OrderBy(b => b.CheckIn)
+        IQueryable<Booking> query = context.Bookings
+            .Where(b => b.HotelId == hotelId);
+
+        query = ApplyBookingFilters(query,filters);
+
+        PagedResult<GetBookingDto> bookings = await query
+            .AsNoTracking()
             .Select(b => new GetBookingDto(
                 b.BookingId,
                 b.HotelId,
@@ -43,26 +53,34 @@ public class BookingService(
                 b.TotalPrice,
                 b.Status.ToString(),
                 b.CreatedAtUtc,
-                b.UpdateAtUtc)).ToListAsync();
+                b.UpdateAtUtc)).ToPagedResult(paginationParameters);
 
-        return Result<IEnumerable<GetBookingDto>>.Success(bookings);
+        return Result<PagedResult<GetBookingDto>>.Success(bookings);
     }
 
-    public async Task<Result<IEnumerable<GetBookingDto>>> GetBookingUserAsync(int hotelId)
+    public async Task<Result<PagedResult<GetBookingDto>>> GetBookingUserAsync(
+        int hotelId,
+        PaginationParameters paginationParameters,
+        BookingFilterParameters filters)
     {
         string userId = UserId;
 
-        if (string.IsNullOrEmpty(userId)) return Result<IEnumerable<GetBookingDto>>.BadRequest(
+        if (string.IsNullOrEmpty(userId)) return Result<PagedResult<GetBookingDto>>.BadRequest(
             new Error(ErrorCodes.Validation, "User is Required"));
 
         bool hotelExist = await context.Hotels.AnyAsync(h => h.Id == hotelId);
 
-        if (!hotelExist) return Result<IEnumerable<GetBookingDto>>.NotFound(new Error(
+        if (!hotelExist) return Result<PagedResult<GetBookingDto>>.NotFound(new Error(
             ErrorCodes.NotFound,"Hotel Not Found"));
 
-        List<GetBookingDto> bookings = await context.Bookings
-            .Where(b => b.HotelId == hotelId && b.ApplicationUserId == userId)
-            .OrderBy(b=> b.CheckIn)
+        IQueryable<Booking> query = context.Bookings
+            .Where(b => b.HotelId == hotelId
+            && b.ApplicationUserId == userId);
+
+        query = ApplyBookingFilters(query,filters);
+
+        PagedResult<GetBookingDto> bookings = await query
+            .AsNoTracking()
             .Select(b => new GetBookingDto(
                 b.BookingId,
                 b.HotelId,
@@ -74,9 +92,9 @@ public class BookingService(
                 b.Status.ToString(),
                 b.CreatedAtUtc,
                 b.UpdateAtUtc))
-            .ToListAsync();
+            .ToPagedResult(paginationParameters);
 
-        return Result<IEnumerable<GetBookingDto>>.Success(bookings);
+        return Result<PagedResult<GetBookingDto>>.Success(bookings);
     }
 
     public async Task<Result<GetBookingDto>> CreateBookingAsync(
@@ -291,7 +309,7 @@ public class BookingService(
     }
 
 
-    public async Task<bool> IsOverlap(
+    private async Task<bool> IsOverlap(
         string userId,
         int hotelId,
         DateOnly checkIn,
@@ -303,8 +321,7 @@ public class BookingService(
             && b.Status != BookingStatus.Cancelled
             && checkIn < b.CheckOut
             && checkOut > b.CheckIn
-            && b.ApplicationUserId == userId)
-            .AsQueryable();
+            && b.ApplicationUserId == userId);
 
         if(bookingId != null)
         {
@@ -312,5 +329,60 @@ public class BookingService(
         }
 
         return await query.AnyAsync();
+    }
+
+    private IQueryable<Booking> ApplyBookingFilters(
+        IQueryable<Booking> query,
+        BookingFilterParameters filters)
+    {
+        if (filters.Status.HasValue)
+            query = query.Where(b => b.Status == filters.Status);
+
+        if (filters.CheckInFrom.HasValue)
+            query = query.Where(b => b.CheckIn >= filters.CheckInFrom);
+
+        if (filters.CheckInTo.HasValue)
+            query = query.Where(b => b.CheckIn <= filters.CheckInTo);
+
+        if (filters.CheckOutFrom.HasValue)
+            query = query.Where(b => b.CheckOut >= filters.CheckOutFrom);
+
+        if (filters.CheckOutTo.HasValue)
+            query = query.Where(b => b.CheckOut <= filters.CheckOutTo);
+
+        if (filters.MinPrice.HasValue)
+            query = query.Where(b => b.TotalPrice >= filters.MinPrice);
+
+        if (filters.MaxPrice.HasValue)
+            query = query.Where(b => b.TotalPrice <= filters.MaxPrice);
+
+        if (filters.MinGuests.HasValue)
+            query = query.Where(b => b.Guests >= filters.MinGuests);
+
+        if (filters.MaxGuests.HasValue)
+            query = query.Where(b => b.Guests <= filters.MaxGuests);
+
+        if (filters.CreatedAfter.HasValue)
+            query = query.Where(b => b.CreatedAtUtc >= filters.CreatedAfter);
+
+        if (filters.CreatedBefore.HasValue)
+            query = query.Where(b => b.CreatedAtUtc <= filters.CreatedBefore);
+
+        query = filters.SortBy?.Trim().ToLowerInvariant() switch
+        {
+            "checkin" => filters.SortDescending ?
+                query.OrderByDescending(b => b.CheckIn) : query.OrderBy(b => b.CheckIn),
+            "checkout" => filters.SortDescending ?
+                query.OrderByDescending(b => b.CheckOut) : query.OrderBy(b => b.CheckOut),
+            "price" => filters.SortDescending ?
+                query.OrderByDescending(b => b.TotalPrice) : query.OrderBy(b => b.TotalPrice),
+            "guests" => filters.SortDescending ?
+                query.OrderByDescending(b => b.Guests) : query.OrderBy(b => b.Guests),
+            "createdat" => filters.SortDescending ?
+                query.OrderByDescending(b => b.CreatedAtUtc) : query.OrderBy(b => b.CreatedAtUtc),
+            _ => query.OrderBy(b => b.CheckIn)
+        };
+
+        return query;
     }
 }

@@ -5,28 +5,66 @@ using HotelListing.Api.Domain;
 using HotelListing.Api.DTOs.HotelDto;
 using HotelListing.Api.Common.Results;
 using Microsoft.EntityFrameworkCore;
+using HotelListing.Api.Common.Models.Paging;
+using HotelListing.Api.Common.Models.Extensions;
+using HotelListing.Api.Common.Models.Filtering;
 
 namespace HotelListing.Api.Application.Services;
 
 public class HotelsService(HotelListingDbContext context) : IHotelsService
 {
-    public async Task<Result<IEnumerable<GetHotelsDto>>> GetHotelsAsync()
+    public async Task<Result<PagedResult<GetHotelsDto>>> GetHotelsAsync(
+        PaginationParameters paginationParameters, HotelFilterParameters filters)
     {
-        List<GetHotelsDto> hotels = await context.Hotels
+        IQueryable<Hotel> query = context.Hotels;
+
+        if (filters.MinRating.HasValue)
+            query = query.Where(q => q.Rating >= filters.MinRating);
+
+        if (filters.MaxRating.HasValue)
+            query = query.Where(q => q.Rating <= filters.MaxRating);
+
+        if (filters.MinPrice.HasValue)
+            query = query.Where(q => q.PerNightRate >= filters.MinPrice);
+
+        if (filters.MaxPrice.HasValue)
+            query = query.Where(q => q.PerNightRate <= filters.MaxPrice);
+
+        if (!string.IsNullOrWhiteSpace(filters.Location))
+            query = query.Where(h => EF.Functions.Like(h.Address,$"%{filters.Location.Trim()}%"));
+
+        if (!string.IsNullOrEmpty(filters.Search))
+            query = query.Where(h => EF.Functions.Like(h.Name, $"%{filters.Search.Trim()}%")||
+            EF.Functions.Like(h.Address,$"%{filters.Search.Trim()}%"));
+
+        query = filters.SortBy?.ToLower() switch
+        {
+            "name" => filters.SortDescending ?
+                query.OrderByDescending(h => h.Name) : query.OrderBy(h => h.Name),
+            "address" => filters.SortDescending ?
+                query.OrderByDescending(h => h.Address) : query.OrderBy(h => h.Address),
+            "price" => filters.SortDescending ? 
+                query.OrderByDescending(h => h.PerNightRate) : query.OrderBy(h => h.PerNightRate),
+            _ => query.OrderBy(h => h.Name)
+        };
+
+        PagedResult<GetHotelsDto> hotels = await query
+            .AsNoTracking()
             .Select(h => new GetHotelsDto(
                 h.Id,
                 h.Name,
                 h.Address,
                 h.Rating,
                 h.PerNightRate))
-            .ToListAsync();
+            .ToPagedResult(paginationParameters);
 
-        return Result<IEnumerable<GetHotelsDto>>.Success(hotels);
+        return Result<PagedResult<GetHotelsDto>>.Success(hotels);
     }
 
     public async Task<Result<GetHotelDto>> GetHotelAsync(int id)
     {
         GetHotelDto? hotel = await context.Hotels
+            .AsNoTracking()
             .Where(h => h.Id == id)
             .Select(h => new GetHotelDto(
                 h.Id,

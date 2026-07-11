@@ -4,7 +4,7 @@
 @hotelId =3
 @bookingId =10
 @today = {{$localDatetime iso8601}}
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZmUyMmYyMC01YmQwLTQwYmUtOTA5Yy00OTk0Y2Y3OWJjOWQiLCJlbWFpbCI6IkhPYWRtaW5AZ21haWwuY29tIiwianRpIjoiZTRkMjY4NjQtZTVlNy00NTQ1LWIwMDEtNWQwNGU4ZTJmOWJiIiwibmFtZSI6IkpvaG4gRG9lIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiSG90ZWxBZG1pbiIsImV4cCI6MTc4MjYzNDkxOSwiaXNzIjoiSG90ZWxMaXN0aW5nQXBpIiwiYXVkIjoiSG90ZWxMaXN0aW5nQXBpQ2xpZW50In0.aTuqqOZaaf0amgOYEXb47jzZpcWrbS1izQlc2BwFWzA
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZmUyMmYyMC01YmQwLTQwYmUtOTA5Yy00OTk0Y2Y3OWJjOWQiLCJlbWFpbCI6IkhPYWRtaW5AZ21haWwuY29tIiwianRpIjoiMzQwYjYyNGQtYzhmYS00MWM0LWI2YzctOTBmY2FmZGM5NWIyIiwibmFtZSI6IkpvaG4gRG9lIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiSG90ZWxBZG1pbiIsImV4cCI6MTc4MzUwNTQwNSwiaXNzIjoiSG90ZWxMaXN0aW5nQXBpIiwiYXVkIjoiSG90ZWxMaXN0aW5nQXBpQ2xpZW50In0.Y7tPmi8-uAHF2ipS6gzf0Wp1YWiwvRyxtDXHRwIp4yo
 ###
 
 POST {{host}}/api/auth/register
@@ -100,7 +100,7 @@ PUT {{host}}/api/hotels/{{hotelId}}/bookings/{{bookingId}}/admin/confirm
 Authorization: Bearer {{token}}
 ###
 
-GET {{host}}/api/hotels/{{hotelId}}/bookings/admin
+GET {{host}}/api/hotels/{{hotelId}}/bookings/admin?status=confirmed
 Authorization: Bearer {{token}}
 
 ###

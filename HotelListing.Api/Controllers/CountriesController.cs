@@ -5,6 +5,10 @@ using HotelListing.Api.Common.Results;
 using HotelListing.Api.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using HotelListing.Api.Common.Constants;
+using HotelListing.Api.DTOs.HotelDto;
+using HotelListing.Api.Common.Models.Paging;
+using HotelListing.Api.Common.Models.Filtering;
+using Microsoft.AspNetCore.JsonPatch;
 
 
 [Route("api/[controller]")]
@@ -15,11 +19,27 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
 
     // GET: api/Country
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GetCountriesDto>>> GetCountry()
+    public async Task<ActionResult<IEnumerable<GetCountriesDto>>> GetCountries(
+        [FromQuery]CountriesFilterParameter filters)
     {
-        Result<IEnumerable<GetCountriesDto>> result = await countriesService.GetCountriesAsync();
+        Result<IEnumerable<GetCountriesDto>> result = await countriesService
+            .GetCountriesAsync(filters);
 
         return ToActionResult<IEnumerable<GetCountriesDto>>(result);
+    }
+
+    [HttpGet("{countryId:int}/hotels")]
+    public async Task<ActionResult<PagedResult<GetHotelDto>>> GetCountriesHotel(
+        [FromRoute] int countryId,
+        [FromQuery] PaginationParameters paginationParameters,
+        [FromQuery] HotelFilterParameters filters)
+    {
+        Result<PagedResult<GetHotelDto>> hotels = await countriesService.GetCountriesHotelAsync(
+            countryId,
+            paginationParameters,
+            filters);
+
+        return ToActionResult(hotels);
     }
 
     // GET: api/Country/5
@@ -40,6 +60,23 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
     {
 
         Result country = await countriesService.UpdateCountryAsync(id,countryDto);
+
+        return ToActionResult(country);
+    }
+
+    [HttpPatch("{id:int}")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<ActionResult> PatchCountry(
+        int id,
+        [FromBody]JsonPatchDocument<UpdateCountryDto> patchDoc)
+    {
+        if (patchDoc == null)
+            return BadRequest("Patch Document is Required");
+
+        if (patchDoc.Operations.Count == 0)
+            return BadRequest("Patch Must Contain Atleast One Operation");
+
+        Result country = await countriesService.PatchCountryAsync(id, patchDoc);
 
         return ToActionResult(country);
     }

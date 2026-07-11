@@ -1,5 +1,4 @@
 ﻿using HotelListing.Api.Common.Constants;
-using HotelListing.Api.Common.Models;
 using HotelListing.Api.Common.Results;
 using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Domain;
@@ -10,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using HotelListing.Api.Common.Models.Config;
 
 namespace HotelListing.Api.Application.Services;
 
@@ -21,6 +21,10 @@ public class UserService(
 {
     public async Task<Result<RegisteredUserDto>> RegisterAsync(RegisterUserDto registerUserDto)
     {
+        if (registerUserDto.Role == RoleNames.HotelAdmin && !registerUserDto.AssociatedHotelId.HasValue)
+            return Result<RegisteredUserDto>.BadRequest(new Error(
+                ErrorCodes.Validation, "HotelId is Required"));
+
         ApplicationUser user = new ApplicationUser
         {
             Email = registerUserDto.Email,

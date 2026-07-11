@@ -6,20 +6,15 @@ namespace HotelListing.Api.Application.Services;
 
 public class ApiKeyValidatorService(HotelListingDbContext context) : IApiKeyValidatorService
 {
-    public async Task<bool> IsValidAsync(string apiKey, CancellationToken ct = default)
+    public async Task<ApiKey?> IsValidAsync(string apiKey, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            return false;
-        }
-
-       ApiKey? key = await context.ApiKeys
+        ApiKey? key = await context.ApiKeys
             .AsNoTracking()
             .FirstOrDefaultAsync(k => k.KeyValue  == apiKey,ct);
 
-        if (key == null) return false;
+        if (key == null) return null;
 
-        return key.IsActive;
+        return key;
     }
 
 }

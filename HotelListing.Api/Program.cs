@@ -1,7 +1,6 @@
 
 using HotelListing.Api.Common.Constants;
 using HotelListing.Api.Domain;
-using HotelListing.Api.Common.Models;
 using HotelListing.Api.Application.Contracts;
 using HotelListing.Api.Handlers;
 using HotelListing.Api.Application.Services;
@@ -10,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using HotelListing.Api.Common.Models.Config;
 
 namespace HotelListing.Api
 {
@@ -22,8 +22,23 @@ namespace HotelListing.Api
 
             //adding services to ioc container
             var strconn = builder.Configuration.GetConnectionString("HotelListingDbConnectionString");
-            builder.Services.AddDbContext<HotelListingDbContext>
-                (options => options.UseSqlServer(strconn));
+            builder.Services.AddDbContextPool<HotelListingDbContext>(options =>{
+                options.UseSqlServer(strconn, sqlOptions =>
+                {
+                    sqlOptions.CommandTimeout(30);
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount:3,
+                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        errorNumbersToAdd: null);
+                });
+
+                if (builder.Environment.IsDevelopment())
+                { 
+                    options.EnableDetailedErrors();
+                    options.EnableSensitiveDataLogging();
+                }
+
+            },poolSize: 128);
             // Add services to the container.
             builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
                 .AddRoles<IdentityRole>()
@@ -79,8 +94,12 @@ namespace HotelListing.Api
             builder.Services.AddScoped<IBookingService, BookingService>();
 
             builder.Services.AddControllers()
+                .AddNewtonsoftJson()
                 .AddJsonOptions(options => 
-                { options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles; }); 
+                { 
+                    options.JsonSerializerOptions.ReferenceHandler = 
+                    System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles; 
+                }); 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 

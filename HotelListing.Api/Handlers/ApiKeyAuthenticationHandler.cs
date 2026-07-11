@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using HotelListing.Api.Domain;
 
 namespace HotelListing.Api.Handlers
 {
@@ -26,24 +27,24 @@ namespace HotelListing.Api.Handlers
                 apiKey = headerValues.ToString();
             }
 
-            if (string.IsNullOrEmpty(apiKey))
+            if (string.IsNullOrWhiteSpace(apiKey))
             {
                 return AuthenticateResult.NoResult();
             }
 
-            var valid = await apiKeyValidatorService.IsValidAsync(
+            ApiKey? key = await apiKeyValidatorService.IsValidAsync(
                 apiKey,
                 Context.RequestAborted);
 
-            if (!valid)
+            if (key == null)
             {
                 return AuthenticateResult.Fail("Invalid API Key");
             }
 
             List<Claim> claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier,"apikey"),
-                new Claim(ClaimTypes.Name,"ApiKeyClient")
+                new Claim(ClaimTypes.NameIdentifier,key.ApiKeyId.ToString()),
+                new Claim(ClaimTypes.Name,key.Name)
             };
 
             ClaimsIdentity identity = new ClaimsIdentity(claims, Scheme.Name);

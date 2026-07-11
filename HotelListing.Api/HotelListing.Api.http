@@ -1,8 +1,13 @@
 @HotelListing.Api_HostAddress = https://localhost:7229
 @id=9
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5YzBmZWNmNy0zNmQzLTQwYjUtODRmNy0zYjY4NGU4NjU4OGQiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6ImM3NTcxYWE0LWMwNDAtNGNkYi1hYWEwLWU0YjI2ZGQwMTQyYyIsIm5hbWUiOiJKb2huIERvZSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzgyNjQzNjcxLCJpc3MiOiJIb3RlbExpc3RpbmdBcGkiLCJhdWQiOiJIb3RlbExpc3RpbmdBcGlDbGllbnQifQ.qOMNgoJwMqq0o1cWnZjhKAAx11TMOl5CSSJeAsQJTnQ
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5YzBmZWNmNy0zNmQzLTQwYjUtODRmNy0zYjY4NGU4NjU4OGQiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6ImNjZDQ3ZDIzLTJiYzYtNGY2OC04MzU4LTA3MDM1ZDk4M2YzYSIsIm5hbWUiOiJKb2huIERvZSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzgzNTkzMTczLCJpc3MiOiJIb3RlbExpc3RpbmdBcGkiLCJhdWQiOiJIb3RlbExpc3RpbmdBcGlDbGllbnQifQ.lsol983xL3iHUAeDQVejY-MVbr78VoiTm8v1Oce0UZo
 ###
-GET {{HotelListing.Api_HostAddress}}/api/countries
+
+GET {{HotelListing.Api_HostAddress}}/api/countries?search=ph
+Authorization: Bearer {{token}}
+###
+
+GET {{HotelListing.Api_HostAddress}}/api/countries/7/hotels?pagenum=1&pagesize=40
 Authorization: Bearer {{token}}
 ###
 
@@ -37,7 +42,7 @@ Content-Type: application/json
 
 ###
 
-GET {{HotelListing.Api_HostAddress}}/api/hotels
+GET {{HotelListing.Api_HostAddress}}/api/hotels?pagenumber=1&pagesize=10&minrating=4.5&maxprice=320
 Authorization: Bearer {{token}}
 ###
 
@@ -109,3 +114,13 @@ GET {{HotelListing.Api_HostAddress}}/api/basicauth
 Authorization: Basic YWRtaW5AZ21haWwuY29tOlBAc3N3b3JkMQ== 
 ###
 
+PATCH {{HotelListing.Api_HostAddress}}/api/countries/4
+Authorization: Bearer {{token}}
+Content-Type: application/json-patch+json
+[
+    {
+        "op": "replace",
+        "path": "/shortname",
+        "value": "PH"
+    }
+]
