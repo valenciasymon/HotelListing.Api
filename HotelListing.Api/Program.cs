@@ -103,6 +103,16 @@ namespace HotelListing.Api
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            //builder.Services.AddMemoryCache();
+            builder.Services.AddOutputCache(options =>
+            {
+                options.AddPolicy(CacheConstants.AuthenticatedUserCachingPolicy, builder =>
+                {
+                    builder.AddPolicy<AuthenticatedUserCachingPolicy>()
+                    .SetCacheKeyPrefix(CacheConstants.AuthenticatedUserCachingPolicyTag);
+                }, true);
+            });
+
             var app = builder.Build();
 
             app.MapGroup("api/defaultauth").MapIdentityApi<ApplicationUser>();
@@ -117,6 +127,7 @@ namespace HotelListing.Api
 
             app.UseAuthorization();
 
+            app.UseOutputCache();
 
             app.MapControllers();
 

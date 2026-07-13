@@ -9,6 +9,7 @@ using HotelListing.Api.DTOs.HotelDto;
 using HotelListing.Api.Common.Models.Paging;
 using HotelListing.Api.Common.Models.Filtering;
 using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.OutputCaching;
 
 
 [Route("api/[controller]")]
@@ -19,6 +20,7 @@ public class CountriesController(ICountriesService countriesService) : BaseApiCo
 
     // GET: api/Country
     [HttpGet]
+    [OutputCache(PolicyName = CacheConstants.AuthenticatedUserCachingPolicy)]
     public async Task<ActionResult<IEnumerable<GetCountriesDto>>> GetCountries(
         [FromQuery]CountriesFilterParameter filters)
     {

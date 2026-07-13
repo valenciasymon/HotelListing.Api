@@ -17,16 +17,17 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
     public async Task<Result<IEnumerable<GetCountriesDto>>> GetCountriesAsync(
         CountriesFilterParameter filters)
     {
+        string searchTerm = filters.Search?.Trim().ToLowerInvariant() ?? string.Empty;
+
         IQueryable<Country> query = context.Countries;
 
         if (!string.IsNullOrWhiteSpace(filters.Search))
         {
-            string? term = filters.Search.Trim();
-            query = query.Where(c => EF.Functions.Like(c.Name, $"%{term}%")
-            || EF.Functions.Like(c.ShortName, $"%{term}%"));
+            query = query.Where(c => EF.Functions.Like(c.Name, $"%{searchTerm}%")
+            || EF.Functions.Like(c.ShortName, $"%{searchTerm}%"));
         }
-            
-        List<GetCountriesDto> countries = await query
+
+        List<GetCountriesDto>countries = await query
             .AsNoTracking()
             .Select(c => new GetCountriesDto(
                 c.Id,
@@ -93,7 +94,6 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
             country.ShortName = countryDto.ShortName;
 
             await context.SaveChangesAsync();
-            
             return Result.Success();
         }
         catch (DbUpdateConcurrencyException)
@@ -269,7 +269,6 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         country.ShortName = updateCountryDto.ShortName;
 
         await context.SaveChangesAsync();
-
         return Result.Success();
     }
 
