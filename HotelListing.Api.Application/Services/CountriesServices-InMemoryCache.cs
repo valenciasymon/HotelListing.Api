@@ -57,7 +57,6 @@
 
 //            cache.Set(cacheKey, cachedCountries, cacheOptions);
 //        }
-
 //        return Result<IEnumerable<GetCountriesDto>>.Success(cachedCountries!);
 //    }
 

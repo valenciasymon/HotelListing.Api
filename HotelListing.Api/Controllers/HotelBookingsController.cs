@@ -7,12 +7,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using HotelListing.Api.Common.Models.Paging;
 using HotelListing.Api.Common.Models.Filtering;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HotelListing.Api.Controllers;
 
 [ApiController]
 [Route("api/hotels/{hotelId:int}/bookings")]
 [Authorize]
+[EnableRateLimiting("perUser")]
 public class HotelBookingsController(IBookingService bookingService) : BaseApiController
 {
 

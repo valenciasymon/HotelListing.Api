@@ -10,14 +10,15 @@ using HotelListing.Api.Common.Models.Paging;
 using HotelListing.Api.Common.Models.Filtering;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 
 
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
+[EnableRateLimiting("fixed")]
 public class CountriesController(ICountriesService countriesService) : BaseApiController
 {
-
     // GET: api/Country
     [HttpGet]
     [OutputCache(PolicyName = CacheConstants.AuthenticatedUserCachingPolicy)]

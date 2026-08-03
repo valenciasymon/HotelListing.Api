@@ -10,6 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using HotelListing.Api.Common.Models.Config;
+using Microsoft.Extensions.Logging;
 
 namespace HotelListing.Api.Application.Services;
 
@@ -17,7 +18,8 @@ public class UserService(
     UserManager<ApplicationUser> userManager,
     IOptions<JwtSettings> options,
     RoleManager<IdentityRole> roleManager,
-    HotelListingDbContext context) : IUserService
+    HotelListingDbContext context,
+    ILogger<UserService> logger) : IUserService
 {
     public async Task<Result<RegisteredUserDto>> RegisterAsync(RegisterUserDto registerUserDto)
     {
@@ -51,6 +53,9 @@ public class UserService(
             Error[] errors = result.Errors
                 .Select(e => new Error(ErrorCodes.BadRequest, e.Description))
                 .ToArray();
+
+            logger.LogError("User Registration failed for {Email} : {Error}",
+                registerUserDto.Email, string.Join(", ",errors));
 
             return Result<RegisteredUserDto>.BadRequest(errors);
         }
@@ -87,6 +92,7 @@ public class UserService(
 
         if (user == null)
         {
+            logger.LogWarning("Failed Login attempt for Email:{Email}", loginUserDto.Email);
             return Result<string>.BadRequest(new Error(
                 ErrorCodes.BadRequest, "Invalid Credentials"));
         }

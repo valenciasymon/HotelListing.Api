@@ -47,7 +47,9 @@ public class HotelOrSytemAdminFilter(HotelListingDbContext dbContext) :
         context.RouteData.Values.TryGetValue("hotelId",out object? hotelIdObj);
         int.TryParse(hotelIdObj?.ToString(), out int parsedHotelId);
 
-        if(parsedHotelId == 0)
+        bool hotelExists = await dbContext.Hotels.AnyAsync(h => h.Id == parsedHotelId);
+
+        if(!hotelExists)
         {
             context.Result = new ForbidResult();
             return;

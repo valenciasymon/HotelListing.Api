@@ -181,12 +181,13 @@ public class BookingService(
         if (string.IsNullOrEmpty(userId)) return Result<GetBookingDto>.BadRequest(
             new Error(ErrorCodes.Validation, "User Is Required"));
 
-        bool overlaps = await IsOverlap(
-            userId,
-            hotelId,
-            updateBookingDto.CheckIn,
-            updateBookingDto.CheckOut,
-            bookingId);
+        bool overlaps = await context.Bookings.AnyAsync(
+            b => b.BookingId != bookingId
+            && b.HotelId == hotelId
+            && b.CheckIn < updateBookingDto.CheckOut
+            && b.CheckOut > updateBookingDto.CheckIn
+            && b.ApplicationUserId != userId
+            && b.Status != BookingStatus.Cancelled);
 
         if (overlaps) return Result<GetBookingDto>.Conflict(
             new Error(
