@@ -17,6 +17,10 @@ using Serilog.Events;
 using Serilog.Extensions.Hosting;
 using System.IdentityModel.Tokens.Jwt;
 using HotelListing.Api.Middleware;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using System.Text.Json;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using HealthChecks.UI.Client;
 
 namespace HotelListing.Api
 {
@@ -62,6 +66,7 @@ namespace HotelListing.Api
                     }
 
                 }, poolSize: 128);
+
                 // Add services to the container.
                 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
                     .AddRoles<IdentityRole>()
@@ -172,7 +177,7 @@ namespace HotelListing.Api
                     //global limiter
                     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                     {
-                        var ipAddress = context.Connection.RemoteIpAddress?.ToString()
+                        string ipAddress = context.Connection.RemoteIpAddress?.ToString()
                             ?? RateLimitingConstants.Unknown;
 
                         return RateLimitPartition.GetFixedWindowLimiter(ipAddress,
@@ -204,6 +209,22 @@ namespace HotelListing.Api
                         }, cancellationToken: cancellationToken);
                     };
                 });
+
+                builder.Services.AddHealthChecks()
+                    .AddCheck("self", () => HealthCheckResult.Healthy("Application is Running"),
+                        tags:["api"])
+                    .AddDbContextCheck<HotelListingDbContext>(
+                        name: "Database",
+                        failureStatus: HealthStatus.Unhealthy,
+                        tags: ["db","sql"]);
+
+                builder.Services.AddHealthChecksUI(setup =>
+                {
+                    setup.SetEvaluationTimeInSeconds(10);
+                    setup.MaximumHistoryEntriesPerEndpoint(50);
+                    setup.AddHealthCheckEndpoint("HotelListing API", "/healthz");
+
+                }).AddInMemoryStorage();
 
                 var app = builder.Build();
 
@@ -248,6 +269,58 @@ namespace HotelListing.Api
                 }
 
                 app.UseHttpsRedirection();
+
+                //app.MapHealthChecks("/healthz", new HealthCheckOptions
+                //{
+                //    ResponseWriter = async (context, report) =>
+                //    {
+                //        context.Response.ContentType = "application/json";
+
+                //        var response = new
+                //        {
+                //            status = report.Status.ToString(),
+                //            checks = report.Entries.Select(entry => new
+                //            {
+                //                name = entry.Key,
+                //                status = entry.Value.Status.ToString(),
+                //                description = entry.Value.Description,
+                //                duration = entry.Value.Duration.TotalMicroseconds,
+                //                exception = entry.Value.Exception?.Message,
+                //                data = entry.Value.Data
+                //            }),
+                //            totalDuration = report.TotalDuration.TotalMicroseconds
+
+                //        };
+
+                //        await context.Response.WriteAsync(JsonSerializer.Serialize(
+                //            response, new JsonSerializerOptions
+                //            {
+                //                WriteIndented = true
+                //            }));
+                //    }
+                //});
+
+                //healthcheck UI
+                app.MapHealthChecks("healthz", new HealthCheckOptions
+                {
+                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                });
+
+                app.MapHealthChecks("/healthz/live", new HealthCheckOptions
+                {
+                    Predicate = check => false
+                });
+
+                app.MapHealthChecks("/healthz/ready", new HealthCheckOptions
+                {
+                    Predicate = check => check.Tags.Contains("db")
+                });
+
+                app.MapHealthChecksUI(options =>
+                {
+                    options.UIPath = "/healthchecks-ui";
+                    options.ApiPath = "/healthchecks-api";
+                });
 
                 app.UseRateLimiter();
 

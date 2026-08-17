@@ -1,0 +1,5 @@
+@HotelListing.Api_HostAddress = https://localhost:7229
+
+###
+GET {{HotelListing.Api_HostAddress}}/healthz
+Accept: application/json

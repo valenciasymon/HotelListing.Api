@@ -98,7 +98,7 @@ public class CountriesService(HotelListingDbContext context) : ICountriesService
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await CountryExists(id))
+            if (! await CountryExists(id))
             {
                 return Result.NotFound(new Error(
                     ErrorCodes.NotFound,

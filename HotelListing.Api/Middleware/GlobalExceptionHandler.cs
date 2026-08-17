@@ -11,8 +11,10 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         Exception exception,
         CancellationToken cancellationToken)
     {
+        //request trace id
         var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
 
+        //logging exception
         logger.LogError(exception,"An Unhandled exception occured while processing the request." +
             " TraceId: {TraceId}, Path: {Path}, Method: {Method}",
             traceId,
