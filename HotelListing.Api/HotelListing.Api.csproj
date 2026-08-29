@@ -5,9 +5,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>19e4c87d-e98a-4998-9790-133255d9c018</UserSecretsId>
+	<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" Version="10.2.1" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
     <PackageReference Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
@@ -26,6 +30,9 @@
 	<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
 	<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 	<PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
+	<PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+	<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.3" />
+	<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="10.0.1" />
   </ItemGroup>
 	
   <ItemGroup>

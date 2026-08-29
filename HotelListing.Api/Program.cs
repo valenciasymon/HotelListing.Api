@@ -21,6 +21,11 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.Text.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
+using Asp.Versioning;
+using Microsoft.OpenApi;
+using System.Reflection;
+using Swashbuckle.AspNetCore.Filters;
+using HotelListing.Api.Filters;
 
 namespace HotelListing.Api
 {
@@ -220,16 +225,128 @@ namespace HotelListing.Api
 
                 builder.Services.AddHealthChecksUI(setup =>
                 {
-                    setup.SetEvaluationTimeInSeconds(10);
+                    setup.SetEvaluationTimeInSeconds(30);
                     setup.MaximumHistoryEntriesPerEndpoint(50);
                     setup.AddHealthCheckEndpoint("HotelListing API", "/healthz");
 
                 }).AddInMemoryStorage();
 
+                builder.Services.AddApiVersioning(options =>
+                {
+                    options.AssumeDefaultVersionWhenUnspecified = true;
+                    options.DefaultApiVersion = new ApiVersion(1, 0);
+                    options.ReportApiVersions = true;
+                    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+                }).AddApiExplorer(options =>
+                {
+                    options.GroupNameFormat = "'v'VVV";
+                    options.SubstituteApiVersionInUrl = true;
+                });
+
+                //SWAGGER
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen(options =>
+                {
+                    //API Information
+                    options.SwaggerDoc("v1", new OpenApiInfo
+                    {
+                        Version = "v1",
+                        Title = "HotelListing API",
+                        Description = "API for managing Hotels, Countries , And Bookings",
+                        Contact = new OpenApiContact
+                        {
+                            Name = "Support Team",
+                            Email = "support@hotellisting.com"
+                        },
+                        License = new OpenApiLicense
+                        {
+                            Name = "MIT License",
+                            Url = new Uri("https://opensource.org/licenses/MIT")
+                        }
+                    });
+
+                    options.SwaggerDoc("v2", new OpenApiInfo
+                    {
+                        Version = "v2",
+                        Title = "Hotel Listing Api V2",
+                        Description = "Version 2 of the Hotel Listing API with enchanced Features"
+                    });
+
+                    options.DocInclusionPredicate((documentName, apiDescription) =>
+                    {
+                        return apiDescription.GroupName == null ||
+                            string.Equals(
+                                apiDescription.GroupName,
+                                documentName,
+                                StringComparison.OrdinalIgnoreCase);
+                    });
+
+                    //include xml comments
+                    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                    if (File.Exists(xmlPath))
+                    {
+                        options.IncludeXmlComments(xmlPath);
+                    }
+
+
+                    //enable annotations
+                    options.EnableAnnotations();
+
+                    //security Definitions
+                    // Jwt Bearer
+                    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                    {
+                        Description = "Jwt Authorization Header using the Bearer Scheme. Enter 'Bearer'",
+                        Name = "Authorization",
+                        In = ParameterLocation.Header,
+                        Type = SecuritySchemeType.Http,
+                        Scheme = JwtBearerDefaults.AuthenticationScheme,
+                        BearerFormat = "JWT"
+                    });
+
+                    //API Key Authentication
+                    options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+                    {
+                        Description = "Api Key needed to access the Endpoints. X-Api-Key: {API Key}",
+                        In = ParameterLocation.Header,
+                        Name = "X-API-Key",
+                        Type = SecuritySchemeType.ApiKey
+                    });
+
+                    //Basic Auth
+                    options.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+                    {
+                        Description = "Basic Authentication Header",
+                        Name = "Authorization",
+                        In = ParameterLocation.Header,
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "Basic"
+                    });
+
+                    //add security Requirements
+                    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+                    {
+                        [new OpenApiSecuritySchemeReference("Bearer",document)] = [] // dictionary
+                    });
+
+                    //add operation filters for examples
+                    options.ExampleFilters();
+
+                    //custom operation filters  for handling multiple auth schemes
+                    options.OperationFilter<Filters.SecurityRequirementsOperationFilter>();
+
+                    //order actions by method
+                    options.OrderActionsBy(apiDesc => $"{apiDesc.RelativePath}_{apiDesc.HttpMethod}");
+                });
+
+                builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
+
                 var app = builder.Build();
 
                 app.UseExceptionHandler();
 
+                //logging request w/serilog
                 app.UseSerilogRequestLogging(options =>
                 {
                     options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded " +
@@ -266,6 +383,19 @@ namespace HotelListing.Api
                 if (app.Environment.IsDevelopment())
                 {
                     app.MapOpenApi();
+                    app.UseSwagger();
+                    app.UseSwaggerUI(options =>
+                    {
+                        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Hotel Listing API V1");
+                        options.SwaggerEndpoint("/swagger/v2/swagger.json", "Hotel Listing API V2");
+                        options.RoutePrefix = "swagger";
+                        options.DocumentTitle = "Hotel Listing API Documentation";
+                        options.DisplayRequestDuration();
+                        options.EnableDeepLinking();
+                        options.EnableFilter();
+                        options.ShowExtensions();
+                        options.EnableValidator();
+                    });
                 }
 
                 app.UseHttpsRedirection();
